@@ -1,0 +1,169 @@
+﻿@* @inject SignalRClientService signalRClientService
+@inject UIService uiService
+@inject IToastService toastService *@
+
+@rendermode InteractiveServer
+@* <BlazoredToasts Position="ToastPosition.BottomRight"
+                Timeout="5"
+                ShowProgressBar="true" /> *@
+<div class="card p-2 " style="margin:1rem">
+    @* @StateCss() *@
+    <DxMenu Orientation="Orientation.Horizontal"
+            DropDownActionMode="MenuDropDownActionMode.Click"
+            DisplayMode="MenuDisplayMode.Desktop"
+            CollapseItemsToHamburgerMenu="true"
+            CollapseItemToIconMode="MenuCollapseItemToIconMode.All">
+        <TitleTemplate>
+            <DxButton RenderStyle="ButtonRenderStyle.None" Click="@ShowPopup" Text="Shopfloor Service"></DxButton>
+        </TitleTemplate>
+        <Items>
+            <DxMenuItem Position="ItemPosition.Center" Text="Machine" IconCssClass="oi oi-laptop">
+                <Items>
+                    <DxMenuItem NavigateUrl="/MachinesDashboardPage" Text="Dashboard" IconCssClass="oi oi-grid-three-up" />
+                </Items>
+            </DxMenuItem>
+            <DxMenuItem Position="ItemPosition.Center" Text="Tags" IconCssClass="oi oi-tags">
+                <Items>
+                    <DxMenuItem Text="Tags Dashboard" IconCssClass="oi oi-list" />
+                    <DxMenuItem NavigateUrl="/TagCategory" Text="Tags Category" IconCssClass="oi oi-tag" />
+                    <DxMenuItem Text="Machine Tags" IconCssClass="oi oi-tag" />
+                </Items>
+            </DxMenuItem>
+            <DxMenuItem Position="ItemPosition.Center" Text="Test Tool" IconCssClass="oi oi-browser">
+                <Items>
+                    <DxMenuItem Text="Modbus" NavigateUrl="/TestTool" />
+                </Items>
+            </DxMenuItem>
+            <DxMenuItem Position="ItemPosition.Center" Text="Setting" IconCssClass="oi oi-cog">
+                <Items>
+                    <DxMenuItem Text="Service" IconCssClass="oi oi-rss" />
+                </Items>
+            </DxMenuItem>
+        </Items>
+    </DxMenu>
+</div>
+
+@* <DxPopup @bind-Visible="@popupVisible" ShowFooter="true" ShowHeader="true" CloseOnOutsideClick="false" Closed="ClosedPopup">
+    <BodyContentTemplate>
+        Are you sure to @BodyText() to Server?
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <DxButton RenderStyle="@BtnStyle()" Text="Yes" Click="SwitchServerConnection" />
+    </FooterContentTemplate>
+</DxPopup> *@
+@code {
+    // private SignalRConnectionState state;
+
+    private bool popupVisible = false;
+
+
+    protected override Task OnInitializedAsync()
+    {
+        // state = signalRClientService.signalrState;
+        // signalRClientService.StateChangedAct += ConnectionStateChange;
+        // uiService.ToastAct += GetToast;
+        return base.OnInitializedAsync();
+    }
+
+    // private void GetToast(RequestResult res)
+    // {
+    //     switch (res.success)
+    //     {
+    //         case 0:
+    //             toastService.ShowInfo(res.msg);
+    //             break;
+    //         case 1:
+    //             toastService.ShowSuccess(res.msg);
+    //             break;
+    //         case 2:
+    //             toastService.ShowWarning(res.msg);
+    //             break;
+    //         case 3:
+    //             toastService.ShowError(res.msg);
+    //             break;
+    //         default:
+    //             toastService.ShowError($"unknow type({res.success}){res.msg}");
+    //             break;
+    //     }
+    // }
+
+    // private void ConnectionStateChange(SignalRConnectionState newState)
+    // {
+    //     InvokeAsync(() =>
+    //         {
+    //             state = newState;
+    //             StateHasChanged();
+    //         });
+    // }
+
+    private void ShowPopup()
+    {
+        popupVisible = true;
+    }
+
+    private void ClosedPopup()
+    {
+        popupVisible = false;
+    }
+
+    // private async Task SwitchServerConnection()
+    // {
+    //     RequestResult res;
+    //     if (state == SignalRConnectionState.Connected)
+    //     {
+    //         res = await signalRClientService.DisconnectToSignalRServer();
+    //     }
+    //     else if (state == SignalRConnectionState.Disconnected)
+    //     {
+    //         res = await signalRClientService.ConnectToSignalRServer();
+    //     }
+    //     else
+    //     {
+    //         res = new RequestResult(3, "");
+    //     }
+    //     popupVisible = false;
+    //     //uiService.ShowResultToast(res);
+    //     GetToast(res);
+    // }
+
+
+
+    // private string StateCss()
+    // {
+    //     switch (state)
+    //     {
+    //         case SignalRConnectionState.Init:
+    //             return "init";
+    //         case SignalRConnectionState.Connected:
+    //             return "connect";
+    //         case SignalRConnectionState.Disconnected:
+    //             return "disconnect";
+    //         case SignalRConnectionState.Connecting:
+    //             return "connecting";
+    //         default:
+    //             return "";
+    //     }
+    // }
+    // private string BodyText()
+    // {
+    //     if (state == SignalRConnectionState.Connected)
+    //     {
+    //         return "Disconnect";
+    //     }
+    //     else
+    //     {
+    //         return "Connect";
+    //     }
+    // }
+    // private ButtonRenderStyle BtnStyle()
+    // {
+    //     if (state == SignalRConnectionState.Connected)
+    //     {
+    //         return ButtonRenderStyle.Danger;
+    //     }
+    //     else
+    //     {
+    //         return ButtonRenderStyle.Success;
+    //     }
+    // }
+}

@@ -1,0 +1,21 @@
+﻿@switch (StationConfig.Type)
+{
+    case 0:
+        <StationSingleOrderWithPartNOComponent StationConfig="@StationConfig"></StationSingleOrderWithPartNOComponent>
+        break;
+    case 1:
+        <StationSingleOrderWithoutPartNOComponent StationConfig="@StationConfig"></StationSingleOrderWithoutPartNOComponent>
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+    default:
+        break;
+}
+
+@code {
+    [Parameter]
+    public StationConfig StationConfig { get; set; }
+
+}

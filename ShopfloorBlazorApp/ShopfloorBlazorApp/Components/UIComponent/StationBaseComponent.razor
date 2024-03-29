@@ -1,0 +1,67 @@
+﻿@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+@code {
+    [Parameter]
+    public StationConfig StationConfig { get; set; }
+    protected StationBase stationBase;
+    protected bool canedit => stationBase.stationState == StationState.Uninit;
+    protected bool canrun => stationBase.stationState == StationState.Uninit;
+    protected bool canoperate => stationBase.stationState == StationState.Running;
+    protected bool canpause => stationBase.stationState == StationState.Running;
+    protected bool canstop => stationBase.stationState == StationState.Running;
+    protected bool canretry => stationBase.stationState == StationState.Stop || stationBase.stationState == StationState.Error || stationBase.stationState == StationState.Pause;
+    protected bool iserror => stationBase.stationState == StationState.Error;
+
+    public bool showErrorMsg = false;
+    public bool showOperation = false;
+
+    public List<WorkOrder> workOrderCandidates;
+
+
+
+    protected override Task OnInitializedAsync()
+    {
+        stationBase = shopfloorServiceDataService.GetStationBaseByConfig(StationConfig);
+        shopfloorServiceDataService.StationChangedAct += StationBaseStateChanged;
+        workOrderCandidates = shopfloorServiceDataService.GetWorkOrdersNotDoneByProcessName(StationConfig.ProcessName);
+        return base.OnInitializedAsync();
+    }
+
+    public void ShowErrorPopup()
+    {
+        showErrorMsg = true;
+    }
+
+    public void ShowOperationPopup()
+    {
+        showOperation = true;
+    }
+
+    private void StationBaseStateChanged(StationBase newStationBase)
+    {
+        if (newStationBase.name == StationConfig.Name)
+        {
+            StateHasChanged();
+        }
+    }
+
+    protected ButtonRenderStyle GetStatusStyle(StationState stationState)
+    {
+        switch (stationState)
+        {
+            case StationState.Uninit:
+                return ButtonRenderStyle.Secondary;
+            case StationState.Running:
+                return ButtonRenderStyle.Success;
+            case StationState.Pause:
+                return ButtonRenderStyle.Warning;
+            case StationState.Stop:
+            case StationState.Error:
+                return ButtonRenderStyle.Danger;
+            default:
+                return ButtonRenderStyle.None;
+        }
+    }
+
+}

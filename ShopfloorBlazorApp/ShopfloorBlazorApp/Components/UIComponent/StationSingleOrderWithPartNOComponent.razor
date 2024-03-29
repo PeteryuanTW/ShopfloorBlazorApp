@@ -1,0 +1,79 @@
+﻿@inherits StationBaseComponent
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+<div class="card shadow panel">
+    @if (StationConfig != null && stationBase != null)
+    {
+        <DxGridLayout>
+            <Rows>
+                <DxGridLayoutRow Areas="name status" Height="15%" />
+                <DxGridLayoutRow Areas="info info" Height="65%" />
+                <DxGridLayoutRow Areas="actionbtn actionbtn" Height="20%" />
+            </Rows>
+            <Columns>
+                <DxGridLayoutColumn Width="70%" />
+                <DxGridLayoutColumn Width="30%" />
+            </Columns>
+            <Items>
+                <DxGridLayoutItem Area="name">
+                    <Template>
+                        <div class="containeralignmid">
+                            <DxButton Text="@stationSingleOrderWithPartNO.name" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline"></DxButton>
+                            <DxButton IconCssClass="oi oi-media-stop" Enabled="false" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Text" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton IconCssClass="oi oi-list" Enabled="false" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Text" SizeMode="SizeMode.Large"></DxButton>
+
+                        </div>
+                    </Template>
+                </DxGridLayoutItem>
+                <DxGridLayoutItem Area="status">
+                    <Template>
+                        <div class="containeralignmid">
+                            <DxButton Text="@stationSingleOrderWithPartNO.stationState.ToString()" RenderStyle="@GetStatusStyle(stationBase.stationState)"></DxButton>
+                        </div>
+                    </Template>
+                </DxGridLayoutItem>
+                <DxGridLayoutItem Area="info">
+                    <Template>
+                        <div class="containeralignmid p-3">
+                            <DxFormLayout>
+                                <DxFormLayoutItem Caption="Procedure" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    <DxTextBox Text="@stationSingleOrderWithPartNO.procedureName" ReadOnly="true"></DxTextBox>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Work Order" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    @* <DxTextBox @bind-Text="@stationSingleOrderWithPartNO.workorder" ReadOnly="!canedit"></DxTextBox> *@
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Part" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    <DxTextBox @bind-Text="@stationSingleOrderWithPartNO.partNO" ReadOnly="!canedit"></DxTextBox>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem Caption="Step" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    <DxTextBox Text="step" ReadOnly="!canedit"></DxTextBox>
+                                </DxFormLayoutItem>
+
+                            </DxFormLayout>
+                        </div>
+                    </Template>
+                </DxGridLayoutItem>
+                <DxGridLayoutItem Area="actionbtn">
+                    <Template>
+                        <div class="containeralignmid">
+                            <DxButton Enabled="@canrun" Click="@(()=>stationSingleOrderWithPartNO.Run())" IconCssClass="oi oi-media-play" RenderStyle="ButtonRenderStyle.Success" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@canpause" Click="@(()=>stationSingleOrderWithPartNO.Pause())" IconCssClass="oi oi-media-pause" RenderStyle="ButtonRenderStyle.Warning" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@canstop" Click="@(()=>stationSingleOrderWithPartNO.Stop())" IconCssClass="oi oi-media-stop" RenderStyle="ButtonRenderStyle.Danger" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@canretry" Click="@(()=>stationSingleOrderWithPartNO.Reset())" IconCssClass="oi oi-reload" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@iserror" Click="@(()=>ShowErrorPopup())" IconCssClass="oi oi-ellipses" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                        </div>
+                    </Template>
+                </DxGridLayoutItem>
+            </Items>
+        </DxGridLayout>
+    }
+    else
+    {
+        
+    }
+</div>
+<DxPopup @bind-Visible="@showErrorMsg" BodyText="@stationBase.errorMsg" CloseOnOutsideClick="false">
+
+</DxPopup>
+@code {
+    private StationSingleOrderWithPartNO stationSingleOrderWithPartNO => (StationSingleOrderWithPartNO)stationBase;
+}

@@ -1,0 +1,20 @@
+﻿.panel {
+    width: 20rem;
+    height: 30rem;
+    border-radius: 1rem;
+    border-color: white;
+}
+
+.containeralignmid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.actionbtn {
+    width: 2rem;
+    height: 2rem;
+}

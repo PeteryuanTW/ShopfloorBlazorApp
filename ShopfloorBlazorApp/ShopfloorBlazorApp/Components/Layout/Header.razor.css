@@ -1,0 +1,13 @@
+﻿.init {
+    border-color: rgb(72, 79, 86);
+}
+.connect {
+    border-color: rgb(44, 170, 54);
+}
+.connecting {
+    border-color: rgb(253, 126, 23);
+}
+.disconnect {
+    border-color: rgb(220, 56, 72);
+}
+
