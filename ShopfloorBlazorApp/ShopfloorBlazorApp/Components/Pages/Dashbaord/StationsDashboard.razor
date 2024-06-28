@@ -1,0 +1,33 @@
+﻿@page "/StationsDashboard"
+@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<div class="h-100">
+    <DxStackLayout Orientation="Orientation.Vertical" ItemSpacing="2em" CssClass="h-100">
+        <Items>
+            <DxStackLayoutItem Length="6fr">
+                <Template>
+                    <div class="h-100">
+                        <NavComponent MasterRoute="StationDashboard" DetailRoutes="processes"></NavComponent>
+                    </div>
+                </Template>
+            </DxStackLayoutItem>
+            <DxStackLayoutItem Length="6fr">
+                <Template>
+                    <div class="stationsarea h-100">
+                    </div>
+                </Template>
+            </DxStackLayoutItem>
+        </Items>
+    </DxStackLayout>
+</div>
+
+@code {
+    private List<StationConfig> stationConfigs = new();
+    private List<string> processes => stationConfigs.Select(x => x.ProcessName).Distinct().ToList();
+    protected override Task OnInitializedAsync()
+    {
+        stationConfigs = shopfloorServiceDataService.GetStationConfigs();
+        return base.OnInitializedAsync();
+    }
+}

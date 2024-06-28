@@ -10,59 +10,50 @@ namespace ShopfloorBlazorApp.RuntimeClass
         Error,
         Stop,
     }
-    public class StationBase
+    public abstract class StationBase
     {
         public StationConfig StationConfig { get; set; }
-        public string name=> StationConfig.Name;
+        private List<StationCustomAttribute> _stationCustomAttributes = new();
+        public List<StationCustomAttribute> StationCustomAttributes => _stationCustomAttributes;
+        public string name => StationConfig.Name;
         public int type => StationConfig.Type;
         public string procedureName => StationConfig.ProcessName;
-        public WorkOrder? workOrder { get; set; }
-        public bool hasWorkOrder => workOrder != null;
+
         public StationState stationState;
 
         public string errorMsg = String.Empty;
 
-        public bool hasRunned = false;
+        public bool hasRunned { get; set; } = false;
         public StationBase(StationConfig StationConfig)
         {
             this.StationConfig = StationConfig;
             stationState = StationState.Uninit;
         }
-        public void SetWorkOrder(WorkOrder workOrder)
+
+        public void SetCustomAttributes(List<StationCustomAttribute> stationCustomAttributes)
         {
-            this.workOrder = workOrder;
+            _stationCustomAttributes = stationCustomAttributes;
         }
-        public void ClearWorkOrder()
-        {
-            this.workOrder = null;
-        }
-        public virtual void Reset()
-        {
-            workOrder = null;
-            stationState = StationState.Uninit;
-        }
-        public virtual void Run()
-        {
-            if (workOrder != null)
-            {
-                hasRunned = true;
-                stationState = StationState.Running;
-            }
-        }
-        public virtual void Pause()
-        {
-            stationState = StationState.Pause;
-        }
-        public virtual void Stop()
-        {
-            hasRunned = false;
-            stationState = StationState.Stop;
-        }
+
+        public abstract void SetWorkorder(string workorder);
+        public abstract void SetTask(StationWorkOrderPartDetail stationWorkOrderPartDetail);
+        public abstract  void StationWorkOrderPartDetailUpdate(StationWorkOrderPartDetail stationWorkOrderPartDetail);
+        public abstract  void ClearWorkOrder();
+        public abstract void Reset();
+        public abstract void Run();
+        public abstract void Pause();
+        public abstract void Stop();
 
         public void Error(string errormsg)
         {
             errorMsg = errormsg;
             stationState = StationState.Error;
         }
+
+        public Action? UpdateUIAct;
+        public void UpdateUI() => UpdateUIAct?.Invoke();
+
+        public Action? UpdateParameterListsAct;
+        public void UpdateParameterLists() => UpdateParameterListsAct?.Invoke();
     }
 }

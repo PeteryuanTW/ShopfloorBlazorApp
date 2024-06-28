@@ -1,0 +1,35 @@
+﻿.uninit {
+    color: rgba(34, 38, 42);
+    background-color: rgba(109, 118, 126, 0.5);
+}
+
+    .uninit:hover {
+        background-color: rgba(109, 118, 126, 0.8);
+    }
+
+.pause {
+    color: white;
+    background-color: rgba(255, 193, 5, 0.5);
+}
+
+    .pause:hover {
+        background-color: rgba(255, 193, 5, 0.8);
+    }
+
+.running {
+    color: white;
+    background-color: rgba(25, 134, 83, 0.5);
+}
+
+    .running:hover {
+        background-color: rgba(25, 134, 83, 0.8);
+    }
+
+.stoperror {
+    color: white;
+    background-color: rgba(220, 56, 72, 0.5);
+}
+
+    .stoperror:hover {
+        background-color: rgba(220, 56, 72, 0.8);
+    }

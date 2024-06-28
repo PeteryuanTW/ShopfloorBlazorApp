@@ -1,6 +1,11 @@
 ﻿@inherits StationBaseComponent
+@inject IStringLocalizer<Lang> localizer
 @inject ShopfloorServiceDataService shopfloorServiceDataService
-<div class="card shadow panel">
+
+@{
+    base.BuildRenderTree(__builder);
+}
+<div class="card shadow panel @GetPanelStatusStyle()">
     @if (StationConfig != null && stationBase != null)
     {
         <DxGridLayout>
@@ -27,27 +32,43 @@
                 <DxGridLayoutItem Area="status">
                     <Template>
                         <div class="containeralignmid">
-                            <DxButton Text="@stationSingleOrderWithPartNO.stationState.ToString()" RenderStyle="@GetStatusStyle(stationBase.stationState)"></DxButton>
+                            <DxButton Text="@($"{localizer[stationSingleOrderWithPartNO.stationState.ToString()]}")" RenderStyle="@GetStatusStyle()"></DxButton>
                         </div>
                     </Template>
                 </DxGridLayoutItem>
                 <DxGridLayoutItem Area="info">
                     <Template>
-                        <div class="containeralignmid p-3">
+                        <div class="p-3">
                             <DxFormLayout>
-                                <DxFormLayoutItem Caption="Procedure" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                <DxFormLayoutItem Caption="@($"{localizer["Process"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
                                     <DxTextBox Text="@stationSingleOrderWithPartNO.procedureName" ReadOnly="true"></DxTextBox>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Work Order" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
-                                    @* <DxTextBox @bind-Text="@stationSingleOrderWithPartNO.workorder" ReadOnly="!canedit"></DxTextBox> *@
+                                <DxFormLayoutItem Caption="@($"{localizer["Workorder"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    <DxComboBox ReadOnly="@(!canedit)" Data="@workOrderCandidates" Value="@stationSingleOrderWithPartNO.workorder" ValueChanged="((string s)=>OnWorkorderChanged(s))" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto">
+                                    </DxComboBox>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Part" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
-                                    <DxTextBox @bind-Text="@stationSingleOrderWithPartNO.partNO" ReadOnly="!canedit"></DxTextBox>
-                                </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Step" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
-                                    <DxTextBox Text="step" ReadOnly="!canedit"></DxTextBox>
-                                </DxFormLayoutItem>
+                                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    <DxGrid Data="@stationSingleOrderWithPartNO.StationWorkOrderPartDetails" CssClass="h-100">
+                                        <Columns>
+                                            <DxGridDataColumn Caption="@($"{localizer["Part Name"]}")" FieldName="@nameof(StationWorkOrderPartDetail.PartName)"></DxGridDataColumn>
+                                            <DxGridDataColumn Caption="@($"{localizer["Serial No"]}")" FieldName="@nameof(StationWorkOrderPartDetail.SerialNO)"></DxGridDataColumn>
+                                            <DxGridDataColumn Caption="@($"{localizer["Start Time"]}")" FieldName="@nameof(StationWorkOrderPartDetail.StartTime)"></DxGridDataColumn>
+                                            @foreach (StationCustomAttribute stationCustomAttribute in stationSingleOrderWithPartNO.StationCustomAttributes)
+                                            {
+                                                var att = typeof(StationWorkOrderPartDetail).GetProperty(stationCustomAttribute.CustomAttribute);
 
+                                                <DxGridDataColumn Caption="@(stationCustomAttribute.CustomName)" FieldName="@stationCustomAttribute.CustomAttribute">
+                                                    <CellDisplayTemplate Context="customcontext">
+                                                        @{
+                                                            var a = customcontext.Value;
+                                                            <div>@a</div>
+                                                        }
+                                                    </CellDisplayTemplate>
+                                                </DxGridDataColumn>
+                                            }
+                                        </Columns>
+                                    </DxGrid>
+                                </DxFormLayoutItem>
                             </DxFormLayout>
                         </div>
                     </Template>
@@ -55,25 +76,218 @@
                 <DxGridLayoutItem Area="actionbtn">
                     <Template>
                         <div class="containeralignmid">
-                            <DxButton Enabled="@canrun" Click="@(()=>stationSingleOrderWithPartNO.Run())" IconCssClass="oi oi-media-play" RenderStyle="ButtonRenderStyle.Success" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
-                            <DxButton Enabled="@canpause" Click="@(()=>stationSingleOrderWithPartNO.Pause())" IconCssClass="oi oi-media-pause" RenderStyle="ButtonRenderStyle.Warning" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
-                            <DxButton Enabled="@canstop" Click="@(()=>stationSingleOrderWithPartNO.Stop())" IconCssClass="oi oi-media-stop" RenderStyle="ButtonRenderStyle.Danger" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
-                            <DxButton Enabled="@canretry" Click="@(()=>stationSingleOrderWithPartNO.Reset())" IconCssClass="oi oi-reload" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@(canrun && stationSingleOrderWithPartNO.hasWorkOrder)" Click="RunWorkorder" IconCssClass="oi oi-media-play" RenderStyle="ButtonRenderStyle.Success" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@canoperate" Click="@(()=>ShowOperationPopup())" IconCssClass="oi oi-clipboard" RenderStyle="ButtonRenderStyle.Info" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@canpause" Click="PauseWorkorder" IconCssClass="oi oi-media-pause" RenderStyle="ButtonRenderStyle.Warning" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@canstop" Click="FinishWorkorder" IconCssClass="oi oi-media-stop" RenderStyle="ButtonRenderStyle.Danger" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
+                            <DxButton Enabled="@canretry" Click="ResetWorkorder" IconCssClass="oi oi-reload" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
                             <DxButton Enabled="@iserror" Click="@(()=>ShowErrorPopup())" IconCssClass="oi oi-ellipses" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" SizeMode="SizeMode.Large"></DxButton>
                         </div>
                     </Template>
                 </DxGridLayoutItem>
             </Items>
         </DxGridLayout>
+        <DxPopup HeaderText="@($"{stationSingleOrderWithPartNO.stationName}{localizer["Operations"]}")" @bind-Visible="@showOperation" CloseOnOutsideClick="false" ShowFooter="true">
+            <BodyContentTemplate>
+                <DxTabs @bind-ActiveTabIndex="@operationTabIndex">
+                    <DxTabPage Text="@($"{localizer["Station In"]}")">
+                        <DxFormLayout>
+                            <DxFormLayoutItem Caption="@($"{localizer["Part"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="inpartscontext">
+                                @* <DxTagBox Data="@targetWorkOrderDetailCandidates" TextFieldName="@nameof(StationWorkOrderPartDetail.SerialNO)" @bind-Values="@stationInWorkOrderDetails">
+                            <DxListEditorColumn FieldName="@nameof(StationWorkOrderPartDetail.SerialNO)" />
+                            </DxTagBox> *@
+                                <DxTextBox @bind-Text="@serialNo"></DxTextBox>
+                            </DxFormLayoutItem>
+                        </DxFormLayout>
+                    </DxTabPage>
+                    <DxTabPage Text="@($"{localizer["Record"]}")">
+                        <DxFormLayout>
+                            <DxFormLayoutItem Caption="@($"{localizer["Serial No"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="inpartscontext">
+                                <DxComboBox Data="stationSingleOrderWithPartNO.StationWorkOrderPartDetails" Value="@target" SelectedItemChanged="@((StationWorkOrderPartDetail s)=>OnRecordChanged(s))" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto" EditFormat="{0}">
+                                    <Columns>
+                                        <DxListEditorColumn FieldName="@nameof(StationWorkOrderPartDetail.SerialNO)"></DxListEditorColumn>
+                                    </Columns>
+                                </DxComboBox>
+                            </DxFormLayoutItem>
+                            @if (target != null)
+                            {
+                                <DxFormLayoutItem BeginRow="true" Caption="Data Type" Context="recordcontext">
+                                    <DxSpinEdit @bind-Value="@customDataParam.dataType"></DxSpinEdit>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem BeginRow="true" Caption="Sequence" Context="recordcontext">
+                                    <DxSpinEdit @bind-Value="@customDataParam.sequence"></DxSpinEdit>
+                                </DxFormLayoutItem>
+                                <DxFormLayoutItem BeginRow="true" Caption="Value" Context="recordcontext">
+                                    <DxTextBox @bind-Text="@customDataParam.val"></DxTextBox>
+                                </DxFormLayoutItem>
+                            }
+                        </DxFormLayout>
+                    </DxTabPage>
+                    <DxTabPage Text="@($"{localizer["Station Out"]}")">
+                        <DxFormLayout>
+                            <DxFormLayoutItem Caption="@($"{localizer["Part"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="9" Context="inpartscontext">
+                                <DxTagBox Data="@stationSingleOrderWithPartNO.StationWorkOrderPartDetails" TextFieldName="@nameof(StationWorkOrderPartDetail.SerialNO)" @bind-Values="@stationOutWorkOrderDetails">
+                                    <DxListEditorColumn FieldName="@nameof(StationWorkOrderPartDetail.SerialNO)" />
+                                </DxTagBox>
+                            </DxFormLayoutItem>
+                            <DxFormLayoutItem Caption="@($"{localizer["Pass"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="3" Context="stationoutcontext">
+                                <DxCheckBox @bind-Checked="@pass" CheckType="CheckType.Switch"></DxCheckBox>
+                            </DxFormLayoutItem>
+                        </DxFormLayout>
+                    </DxTabPage>
+                </DxTabs>
+            </BodyContentTemplate>
+            <FooterContentTemplate>
+                <DxButton Text="@($"{localizer["Run"]}")" Click="OperationRun"></DxButton>
+            </FooterContentTemplate>
+        </DxPopup>
     }
     else
     {
-        
+
     }
 </div>
-<DxPopup @bind-Visible="@showErrorMsg" BodyText="@stationBase.errorMsg" CloseOnOutsideClick="false">
 
-</DxPopup>
+
 @code {
     private StationSingleOrderWithPartNO stationSingleOrderWithPartNO => (StationSingleOrderWithPartNO)stationBase;
+
+    //private List<string> workOrderCandidates => workOrderDetailCandidates.DistinctBy(x => x.WorkOrderNo).Select(x => x.WorkOrderNo).ToList();
+    private List<StationWorkOrderPartDetail> targetWorkOrderDetailCandidates;
+    private IEnumerable<StationWorkOrderPartDetail> stationInWorkOrderDetails;
+    private IEnumerable<StationWorkOrderPartDetail> stationOutWorkOrderDetails;
+    private StationWorkOrderPartDetail? target;
+    //private StationWorkOrderPartDetail? newRecoed;
+
+    private CustomDataParam customDataParam;
+
+    private string serialNo = string.Empty;
+    private bool pass;
+    private int operationTabIndex;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await UpdateParametersList();
+        stationSingleOrderWithPartNO.UpdateParameterListsAct += (async () => { await GetWorkOrderDetailsByWorkorder(); });
+    }
+
+    private async Task UpdateParametersList()
+    {
+        await GetWorkOrderDetailsByWorkorder();
+    }
+
+    private async Task GetWorkOrderDetailsByWorkorder()
+    {
+        if (stationSingleOrderWithPartNO.hasWorkOrder)
+        {
+            targetWorkOrderDetailCandidates = await shopfloorServiceDataService.GetStatusWorkOrderDetailsStationAndWorkorder(StationConfig.Name, stationSingleOrderWithPartNO.workorder, new List<int> { 0, });
+        }
+        else
+        {
+            targetWorkOrderDetailCandidates = new();
+        }
+    }
+
+    private async void OnWorkorderChanged(string s)
+    {
+        if (String.IsNullOrEmpty(s))
+        {
+            s = String.Empty;
+        }
+        await shopfloorServiceDataService.SetWorkorderByStationName(stationSingleOrderWithPartNO.stationName, s);
+        await GetWorkOrderDetailsByWorkorder();
+
+    }
+
+    private void OnRecordChanged(StationWorkOrderPartDetail? stationWorkOrderPartDetail)
+    {
+        target = stationWorkOrderPartDetail;
+        customDataParam = new()
+            {
+                stationName = stationSingleOrderWithPartNO.stationName,
+                serialNo = target == null ? String.Empty : target.SerialNO,
+            };
+    }
+
+    private async void RunWorkorder()
+    {
+        //stationSingleOrderWithPartNO.Run();
+        await shopfloorServiceDataService.RunStationByName(stationSingleOrderWithPartNO.stationName);
+    }
+
+    private async void PauseWorkorder()
+    {
+        //stationSingleOrderWithPartNO.Run();
+        await shopfloorServiceDataService.PauseStationByName(stationSingleOrderWithPartNO.stationName);
+    }
+
+    private async void ResetWorkorder()
+    {
+        //stationSingleOrderWithPartNO.Run();
+        await shopfloorServiceDataService.ResetStationByName(stationSingleOrderWithPartNO.stationName);
+    }
+
+    protected override void ShowOperationPopup()
+    {
+        OnRecordChanged(null);
+        pass = false;
+        base.ShowOperationPopup();
+    }
+
+    private async void OperationRun()
+    {
+        switch (operationTabIndex)
+        {
+            case 0:
+                StationIn();
+                break;
+            case 1:
+                WriteCustomRecord();
+                break;
+            case 2:
+                StationOut();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private async void StationIn()
+    {
+        // foreach (string part in stationInWorkOrderDetails.Select(x => x.PartNO))
+        // {
+        //     RequestResult res = await shopfloorServiceDataService.StationInByNameAndPart(stationSingleOrderWithPartNO.stationName, part);
+        // }
+        RequestResult res = await shopfloorServiceDataService.StationInByNameAndPart(stationSingleOrderWithPartNO.stationName, serialNo);
+        serialNo = string.Empty;//stationInWorkOrderDetails = null;
+        CloseOperationPopup();
+    }
+
+    private async void WriteCustomRecord()
+    {
+        //RequestResult res = await shopfloorServiceDataService.UpdateWorkOrderDetailsCustomData(newRecoed);
+        //target = new(newRecoed);
+        RequestResult res = await shopfloorServiceDataService.LogCustomData(customDataParam);
+        CloseOperationPopup();
+    }
+
+    private async void StationOut()
+    {
+        foreach (string serialNO in stationOutWorkOrderDetails.Select(x => x.SerialNO))
+        {
+            RequestResult res = await shopfloorServiceDataService.StationOutByNameAndPart(stationSingleOrderWithPartNO.stationName, serialNO, pass);
+        }
+        stationOutWorkOrderDetails = null;
+        await GetWorkOrderDetailsByWorkorder();
+        CloseOperationPopup();
+    }
+
+    private async void FinishWorkorder()
+    {
+        stationSingleOrderWithPartNO.Stop();
+        await shopfloorServiceDataService.StationFinishWorkOrder(stationSingleOrderWithPartNO.stationName, stationSingleOrderWithPartNO.workorder);
+        await GetWorkOrderDetailsByWorkorder();
+        CloseOperationPopup();
+    }
+
 }

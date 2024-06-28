@@ -1,0 +1,40 @@
+﻿@rendermode InteractiveServer
+@inject NavigationManager nav
+@if (!masterRouteSetted || !detailRouteSetted)
+{
+    @* <div>
+        parameter setting fail
+    </div> *@
+}
+else
+{
+    <div class="w-100 h-100 d-flex justify-content-around align-items-center">
+        @foreach (string detailRoute in DetailRoutes)
+        {
+            <div class="card d-flex justify-content-around align-items-center rounded" @onclick="@(()=>ItemClick(detailRoute))">
+                @detailRoute
+            </div>
+            @* <DxButton SizeMode="SizeMode.Large" RenderStyle="ButtonRenderStyle.Secondary" RenderStyleMode="ButtonRenderStyleMode.Outline" Click="@(()=>ItemClick(detailRoute))" Text="@detailRoute"></DxButton> *@
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string MasterRoute { get; set; }
+    private bool masterRouteSetted => !String.IsNullOrEmpty(MasterRoute);
+    [Parameter]
+    public IEnumerable<string> DetailRoutes { get; set; }
+    private bool detailRouteSetted => !(DetailRoutes == null) && DetailRoutes.Any();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    private void ItemClick(string detailRoute)
+    {
+        nav.NavigateTo($"/{MasterRoute}/{detailRoute}");
+    }
+}

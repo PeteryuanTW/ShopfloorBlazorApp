@@ -1,0 +1,43 @@
+﻿@page "/Testing"
+@rendermode InteractiveServer
+<DxGridLayout CssClass="h-75">
+    <Rows>
+        <DxGridLayoutRow></DxGridLayoutRow>
+        <DxGridLayoutRow></DxGridLayoutRow>
+        <DxGridLayoutRow></DxGridLayoutRow>
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn></DxGridLayoutColumn>
+        <DxGridLayoutColumn></DxGridLayoutColumn>
+        <DxGridLayoutColumn></DxGridLayoutColumn>
+        <DxGridLayoutColumn></DxGridLayoutColumn>
+        <DxGridLayoutColumn></DxGridLayoutColumn>
+        <DxGridLayoutColumn></DxGridLayoutColumn>
+        <DxGridLayoutColumn></DxGridLayoutColumn>
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="0" Column="0" RowSpan="2">
+            <Template>
+                <TTTTT rows="2" columns="9" degree="90"></TTTTT>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="2" Column="1" ColumnSpan="2">
+            <Template>
+                <TTTTT rows="2" columns="9" degree="0"></TTTTT>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="2" Column="4" ColumnSpan="2">
+            <Template>
+                <TTTTT rows="2" columns="9" degree="0"></TTTTT>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="0" Column="6" RowSpan="2">
+            <Template>
+                <TTTTT rows="2" columns="9" degree="270"></TTTTT>
+            </Template>
+        </DxGridLayoutItem>
+    </Items>
+</DxGridLayout>
+@code {
+
+}

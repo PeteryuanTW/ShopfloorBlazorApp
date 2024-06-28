@@ -1,0 +1,273 @@
+﻿@page "/WorkorderParts/{WorkorderNo}"
+@rendermode InteractiveServer
+@inject IStringLocalizer<Lang> localizer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+@inject UIService uiService
+@inject EditMode editMode
+
+<DxGridLayout ColumnSpacing="1rem" RowSpacing="1rem">
+    <Rows>
+        <DxGridLayoutRow Height="1fr"></DxGridLayoutRow>
+        <DxGridLayoutRow Height="10fr"></DxGridLayoutRow>
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn Width="4fr"></DxGridLayoutColumn>
+        <DxGridLayoutColumn Width="8fr"></DxGridLayoutColumn>
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="0" Column="0" ColumnSpan="2">
+            <Template>
+                @* @if (!worlorderexist)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        Workorder @WorkorderNo not found
+                    </div>
+                }
+                else
+                {
+                    if (!workorder.HasSerialNo)
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            Workorder @WorkorderNo doesn't have part no.
+                        </div>
+                    }
+                    else
+                    {
+                        @if (workorder.TargetAmount != workorderParts.Count)
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                Workorder @WorkorderNo part amount dosen't match(@workorderParts.Count/@workorder.TargetAmount)
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-success" role="alert">
+                                Workorder @WorkorderNo part amount matched(@workorderParts.Count/@workorder.TargetAmount)
+                            </div>
+                        }
+                    }
+                } *@
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="1" Column="0">
+            <Template>
+                <DxGrid Data="@workorderParts" FocusedRowEnabled="true" FocusedRowChanged="FocusedRowChanged" KeyboardNavigationEnabled="true" ShowFilterRow="true">
+                    <ToolbarTemplate>
+                        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
+                            <DxToolbarItem Click="NewItem_Click" IconCssClass="oi oi-plus" />
+                            <DxToolbarItem Click="DeleteItem_Click" IconCssClass="oi oi-trash" />
+                        </DxToolbar>
+                    </ToolbarTemplate>
+                    <Columns>
+                        <DxGridDataColumn FieldName="PartNo" Caption="@($"{localizer["Serial No"]}")" />
+                    </Columns>
+                </DxGrid>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="1" Column="1">
+            <Template>
+                <DxTabs>
+                    <DxTabPage Text="@($"{localizer["Parameters Setting"]}")"></DxTabPage>
+                    @if (workorder?.HasSerialNo ?? true)
+                    {
+                        @* <DxTabPage Text="Generate part no">
+                            <DxFormLayout>
+                                <DxFormLayoutItem>
+                                    <DxButton Text="Genarate" Click="GenerateClicked" />
+                                </DxFormLayoutItem>
+                                @foreach (string tmpPart in tmpParts)
+                                {
+                                    <DxFormLayoutItem BeginRow="true" ColSpanLg="3">
+                                        <DxTextBox Text="@tmpPart" TextChanged="((string s)=>TextChanged(tmpPart, s))"></DxTextBox>
+                                    </DxFormLayoutItem>
+                                }
+                                <DxFormLayoutItem BeginRow="true">
+                                    <DxButton Text="Add" Click="UpsertRangeClicked" />
+                                </DxFormLayoutItem>
+                            </DxFormLayout>
+
+                        </DxTabPage> *@
+                    }
+                    <DxTabPage Text="@($"{localizer["Operations"]}")">
+                        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Contained" SizeMode="SizeMode.Large">
+                            <DxToolbarItem Text="@($"{localizer["Start"]}")" RenderStyle="@ButtonRenderStyle.Primary" Enabled="@canrun" Click="StartWorkorder" BeginGroup="true" />
+                            <DxToolbarItem Text="@($"{localizer["Pause"]}")" RenderStyle="@ButtonRenderStyle.Warning" Enabled="@canpause" BeginGroup="true" />
+                            <DxToolbarItem Text="@($"{localizer["Finish"]}")" RenderStyle="@ButtonRenderStyle.Danger" Enabled="@canstop" Click="FinishWorkorder" BeginGroup="true" />
+                        </DxToolbar>
+                    </DxTabPage>
+                </DxTabs>
+            </Template>
+        </DxGridLayoutItem>
+    </Items>
+</DxGridLayout>
+
+
+
+<DxPopup @bind-Visible="@showEditPopup" CloseOnOutsideClick="false" ShowFooter="true">
+    <BodyContentTemplate Context="PopupContext">
+        <DxFormLayout>
+            <DxFormLayoutItem Caption="PartNo">
+                <DxTextBox @bind-Text="@workorderPart.PartNo"></DxTextBox>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <DxButton Click="UpsertClicked" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-check" />
+    </FooterContentTemplate>
+</DxPopup>
+<DxPopup @bind-Visible="@showDeletePopup" CloseOnOutsideClick="false" ShowFooter="true" HeaderText="@editMode.text">
+    <BodyContentTemplate Context="PopupContext">
+        Are you sure to delete part @workorderPart?.PartNo in @workorderPart?.WorkorderNo?
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <DxButton Click="DeleteClicked" RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-check" />
+    </FooterContentTemplate>
+</DxPopup>
+
+
+@code {
+    [Parameter]
+    public string WorkorderNo { get; set; }
+    private WorkOrder? workorder;
+    private bool worlorderexist => workorder != null;
+    private List<WorkorderPart> workorderParts;
+    private WorkorderPart? workorderPart;
+
+    List<string> tmpParts = new();
+
+    private bool canrun => workorder?.Status == 0;
+    private bool canpause => workorder?.Status == 1;
+    private bool canstop => workorder?.Status == 1;
+
+    int FocusedRowVisibleIndex { get; set; }
+    private bool showEditPopup { get; set; }
+    private bool showDeletePopup { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        shopfloorServiceDataService.WorkOrderStatusChangedAct += WorkorderStatusChanged;
+        await Init();
+    }
+
+    private void WorkorderStatusChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            await Init();
+            StateHasChanged();
+        });
+    }
+
+
+    private async Task Init()
+    {
+        workorder = await shopfloorServiceDataService.GetWorkOrderByNo(WorkorderNo);
+        if (workorder != null && workorder.HasSerialNo)
+        {
+            workorderParts = await shopfloorServiceDataService.GetWorkorderPartsByWorkorderNo(WorkorderNo);
+            tmpParts = Enumerable.Repeat(String.Empty, workorder.TargetAmount - workorderParts.Count).ToList();
+        }
+    }
+    private void FocusedRowChanged(GridFocusedRowChangedEventArgs args)
+    {
+        FocusedRowVisibleIndex = args.VisibleIndex;
+        workorderPart = (WorkorderPart)args.DataItem;
+    }
+    private void NewItem_Click()
+    {
+        showEditPopup = true;
+        workorderPart = new WorkorderPart
+            {
+                WorkorderNo = WorkorderNo,
+            };
+    }
+
+    private void DeleteItem_Click()
+    {
+        editMode.Delete();
+        showDeletePopup = true;
+    }
+
+    private async Task UpsertClicked()
+    {
+        RequestResult res = await shopfloorServiceDataService.InsertWorkorderPart(workorderPart);
+        await Init();
+        showEditPopup = false;
+    }
+
+    private async Task UpsertRangeClicked()
+    {
+        List<RequestResult> results = new();
+        foreach (string s in tmpParts)
+        {
+            RequestResult res = await shopfloorServiceDataService.InsertWorkorderPart(new WorkorderPart()
+                {
+                    WorkorderNo = this.WorkorderNo,
+                    PartNo = s,
+                });
+            results.Add(res);
+            if (res.success == 3)
+            {
+                uiService.ShowResultToast(res);
+            }
+        }
+        await Init();
+        showEditPopup = false;
+        if (results.Exists(x => x.success == 1))
+        {
+            uiService.ShowResultToast(new RequestResult(1, "Add parts success"));
+        }
+    }
+
+    private async Task DeleteClicked()
+    {
+        RequestResult res = await shopfloorServiceDataService.DeleteWorkorderPart(workorderPart);
+        await Init();
+        showDeletePopup = false;
+    }
+
+    private async Task GenerateClicked()
+    {
+        tmpParts = await GeneratePartNo(workorder.TargetAmount - workorderParts.Count);
+    }
+
+    private async Task<List<string>> GeneratePartNo(int amount)
+    {
+        List<string> res = new();
+        for (int i = 0; i < amount; i++)
+        {
+            string tmp = String.Empty;
+            do
+            {
+                tmp = DateTime.Now.ToString("yyyyMMddHHmmssff");
+                await Task.Delay(10);
+            }
+            while (res.Contains(tmp) || workorderParts.Exists(x => x.PartNo == tmp));
+            res.Add(tmp);
+        }
+        return res;
+    }
+
+    private void TextChanged(string original, string newIn)
+    {
+        int targetIndex = tmpParts.IndexOf(original);
+        if (targetIndex != -1)
+        {
+            tmpParts[targetIndex] = newIn;
+        }
+    }
+
+    
+    private async void StartWorkorder()
+    {
+        RequestResult res = await shopfloorServiceDataService.WorkOrderStart(WorkorderNo, DateTime.Now);
+        uiService.ShowResultToast(res);
+    }
+
+    private async void FinishWorkorder()
+    {
+        RequestResult res = await shopfloorServiceDataService.WorkOrderFinished(WorkorderNo, DateTime.Now);
+        uiService.ShowResultToast(res);
+    }
+}

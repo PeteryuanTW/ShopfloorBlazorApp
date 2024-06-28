@@ -1,7 +1,8 @@
 ﻿@inherits StationBaseComponent
+@inject IStringLocalizer<Lang> localizer
 @inject ShopfloorServiceDataService shopfloorServiceDataService
 
-<div class="card shadow panel">
+<div class="card shadow panel @GetPanelStatusStyle()">
     @if (StationConfig != null && stationBase != null)
     {
         <DxGridLayout>
@@ -28,7 +29,7 @@
                 <DxGridLayoutItem Area="status">
                     <Template>
                         <div class="containeralignmid">
-                            <DxButton Text="@stationSingleOrderWithoutPartNO.stationState.ToString()" RenderStyle="@GetStatusStyle(stationBase.stationState)"></DxButton>
+                            <DxButton Text="@($"{localizer[stationSingleOrderWithoutPartNO.stationState.ToString()]}")" RenderStyle="@GetStatusStyle()"></DxButton>
                         </div>
                     </Template>
                 </DxGridLayoutItem>
@@ -36,24 +37,23 @@
                     <Template>
                         <div class="containeralignmid p-3">
                             <DxFormLayout>
-                                <DxFormLayoutItem Caption="Procedure" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                <DxFormLayoutItem Caption="@($"{localizer["Process"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
                                     <DxTextBox ReadOnly="true" Text="@stationSingleOrderWithoutPartNO.procedureName"></DxTextBox>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Work Order" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
-                                    <DxComboBox ReadOnly="@(!canedit)" EditFormat="{0}" Data="@workOrderCandidates" @bind-Value="@stationSingleOrderWithoutPartNO.workOrder">
-                                        <DxListEditorColumn FieldName="@nameof(WorkOrder.WorkerOrderNo)"/>
+                                <DxFormLayoutItem Caption="@($"{localizer["Workorder"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12">
+                                    <DxComboBox ReadOnly="@(!canedit)" Data="@workOrderCandidates" Value="@stationSingleOrderWithoutPartNO.workorder" ValueChanged="((string workorderNO)=>SetWorkorderAndTask(workorderNO))">
                                     </DxComboBox>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem Caption="Current"  ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
+                                <DxFormLayoutItem Caption="@($"{localizer["WIP"]}")"  ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
                                     <DxSpinEdit ReadOnly="true" Value="@stationSingleOrderWithoutPartNO.currentAmount"></DxSpinEdit>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem  Caption="Target" ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
+                                <DxFormLayoutItem Caption="@($"{localizer["Target"]}")" ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
                                     <DxSpinEdit ReadOnly="true" Value="@stationSingleOrderWithoutPartNO.targetAmount"></DxSpinEdit>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem  Caption="OK" ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
+                                <DxFormLayoutItem Caption="@($"{localizer["OK"]}")" ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
                                     <DxSpinEdit ReadOnly="true" Value="@stationSingleOrderWithoutPartNO.OKAmount"></DxSpinEdit>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem  Caption="NG" ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
+                                <DxFormLayoutItem Caption="@($"{localizer["NG"]}")" ColSpanLg="6" CaptionPosition="CaptionPosition.Vertical">
                                     <DxSpinEdit ReadOnly="true" Value="@stationSingleOrderWithoutPartNO.NGAmount"></DxSpinEdit>
                                 </DxFormLayoutItem>
                             </DxFormLayout>
@@ -74,35 +74,31 @@
                 </DxGridLayoutItem>
             </Items>
         </DxGridLayout>
-        <DxPopup HeaderText="Error Message" @bind-Visible="@showErrorMsg" BodyText="@stationBase.errorMsg" CloseOnOutsideClick="false" />
         <DxPopup HeaderText="Operations" @bind-Visible="@showOperation" CloseOnOutsideClick="false">
             <BodyContentTemplate>
                 <DxTabs>
-                    <DxTabPage Text="Station In">
+                    <DxTabPage Text="@($"{localizer["Station In"]}")">
                         @{
-                            int inAmount = 0;
                             <DxFormLayout>
-                                <DxFormLayoutItem Caption="Amount" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="inamountcontext">
+                                <DxFormLayoutItem Caption="@($"{localizer["Amount"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="inamountcontext">
                                     <DxSpinEdit @bind-Value="@inAmount"></DxSpinEdit>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="instationcontext">
-                                    <DxButton Text="GO"></DxButton>
+                                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="stationincontext">
+                                    <DxButton Text="@($"{localizer["Run"]}")" Click="StationIn"></DxButton>
                                 </DxFormLayoutItem>
                             </DxFormLayout>
                         }
                     </DxTabPage>
-                    <DxTabPage Text="Station Out">
+                    <DxTabPage Text="@($"{localizer["Station Out"]}")">
                         @{
-                            int okAmount = 0;
-                            int ngAmount = 0;
                             <DxFormLayout>
-                                <DxFormLayoutItem Caption="Amount" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" Context="okamountcontext">
+                                <DxFormLayoutItem Caption="@($"{localizer["OK"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" Context="okamountcontext">
                                     <DxSpinEdit @bind-Value="@okAmount"></DxSpinEdit>
-                                </DxFormLayoutItem><DxFormLayoutItem Caption="Amount" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" Context="ngamountcontext">
+                                </DxFormLayoutItem><DxFormLayoutItem Caption="@($"{localizer["NG"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="6" Context="ngamountcontext">
                                     <DxSpinEdit @bind-Value="@ngAmount"></DxSpinEdit>
                                 </DxFormLayoutItem>
-                                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="outstationcontext">
-                                    <DxButton Text="GO"></DxButton>
+                                <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="stationoutcontext">
+                                    <DxButton Text="@($"{localizer["Run"]}")" Click="StationOut"></DxButton>
                                 </DxFormLayoutItem>
                             </DxFormLayout>
                         }
@@ -118,19 +114,63 @@
 </div>
 
 @code {
-
     private StationSingleOrderWithoutPartNO stationSingleOrderWithoutPartNO => (StationSingleOrderWithoutPartNO)stationBase;
+
+
+    int inAmount = 0;
+    int okAmount = 0;
+    int ngAmount = 0;
+
+    private void ResetAmount()
+    {
+        inAmount = 0;
+        okAmount = 0;
+        ngAmount = 0;
+    }
+
+    private async Task SetWorkorderAndTask(string workorderNO)
+    {
+        stationSingleOrderWithoutPartNO.ClearWorkOrder();
+        await shopfloorServiceDataService.SetWorkorderByStationName(stationSingleOrderWithoutPartNO.stationName, workorderNO);
+        // await shopfloorServiceDataService.SetTaskByStationName(stationSingleOrderWithoutPartNO.stationName, stationWorkOrderPartDetail);
+    }
 
     private async void RunWorkorder()
     {
         stationSingleOrderWithoutPartNO.Run();
-        await shopfloorServiceDataService.WorkOrderStart(stationSingleOrderWithoutPartNO.workOrder.WorkerOrderNo);
+        //await shopfloorServiceDataService.StationStartWorkOrder(stationSingleOrderWithoutPartNO.stationName, stationSingleOrderWithoutPartNO.stationWorkOrderPartDetail.WorkOrderNo);
+    }
+
+    protected override void ShowOperationPopup()
+    {
+        ResetAmount();
+        base.ShowOperationPopup();
+    }
+
+
+    private async void StationIn()
+    {
+        //stationSingleOrderWithoutPartNO.StationIn(inAmount);
+        //await shopfloorServiceDataService.UpdateWorkOrderDetailsAmount(stationSingleOrderWithoutPartNO.stationWorkOrderPartDetail);
+        RequestResult res =  await shopfloorServiceDataService.StationInByName(stationSingleOrderWithoutPartNO.stationName, inAmount);
+        //Console.WriteLine(res.msg);
+        CloseOperationPopup();
+    }
+
+    private async void StationOut()
+    {
+        // stationSingleOrderWithoutPartNO.StationOut(okAmount, ngAmount);
+        // await shopfloorServiceDataService.UpdateWorkOrderDetailsAmount(stationSingleOrderWithoutPartNO.stationWorkOrderPartDetail);
+        RequestResult res = await shopfloorServiceDataService.StationOutByName(stationSingleOrderWithoutPartNO.stationName, okAmount, ngAmount);
+        //Console.WriteLine(res.msg);
+        CloseOperationPopup();
     }
 
     private async void FinishWorkorder()
     {
         stationSingleOrderWithoutPartNO.Stop();
-        await shopfloorServiceDataService.WorkOrderFinished(stationSingleOrderWithoutPartNO.workOrder.WorkerOrderNo);
+        await shopfloorServiceDataService.StationFinishWorkOrder(stationSingleOrderWithoutPartNO.stationName, stationSingleOrderWithoutPartNO.stationWorkOrderPartDetail.WorkOrderNo);
+        CloseOperationPopup();
     }
 
 }

@@ -1,5 +1,7 @@
 ﻿@page "/"
+@inject IStringLocalizer<Lang> localizer
 @inject ShopfloorServiceDataService shopfloorServiceDataService
+
 <div class="welcome">
     <DxGridLayout CssClass="welcome-gridlayout" RowSpacing="3rem">
         <Rows>
@@ -7,48 +9,23 @@
             <DxGridLayoutRow Height="auto" Areas="cards"></DxGridLayoutRow>
         </Rows>
         <Items>
-            @* <DxGridLayoutItem Area="header" CssClass="welcome-title">
-                <Template>
-                    <div class="welcome-title-header">Hello World!</div>
-                    <div class="welcome-title-content">Welcome to your new DevExpress Blazor Application</div>
-                </Template>
-            </DxGridLayoutItem> *@
             <DxGridLayoutItem Area="cards" CssClass="welcome-cards">
                 <Template>
-                    @* <NavLink class="welcome-card" href="/counter">
-                        <svg class="welcome-card-img" alt="counter card">
-                            <use href="images/cards.svg#counter"></use>
-                        </svg>
-                        <div class="welcome-card-text">Counter</div>
-                        <div class="welcome-card-back"></div>
-                    </NavLink>
-                    <NavLink class="welcome-card" href="/weather">
-                        <svg class="welcome-card-img" alt="weather card">
-                            <use href="images/cards.svg#weather"></use>
-                        </svg>
-                        <div class="welcome-card-text">Weather</div>
-                        <div class="welcome-card-back"></div>
-                    </NavLink> *@
-                    @foreach (StationConfig stationConfig in stationConfigs)
-                    {
-                        <StationGatewayComponent StationConfig="@stationConfig"></StationGatewayComponent>
-                    }
-                    
+                    <IndexNavIcon NavLink="StationsDashboard" IconName="station" Text="@($"{localizer["Station Dashboard"]}")"></IndexNavIcon>
+                    <IndexNavIcon NavLink="WorkordersDashboard" IconName="workorder" Text="@($"{localizer["Workorder Dashboard"]}")"></IndexNavIcon>
+                    <IndexNavIcon NavLink="MapsDashboard" IconName="map" Text="@($"{localizer["Map Dashboard"]}")"></IndexNavIcon>
                 </Template>
             </DxGridLayoutItem>
         </Items>
     </DxGridLayout>
 </div>
-@* @foreach (StationConfig stationConfig in stationConfigs)
-{
-    <StationGatewayComponent StationConfig="@stationConfig"></StationGatewayComponent>
-} *@
 
 @code{
     private List<StationConfig> stationConfigs;
     protected override Task OnInitializedAsync()
     {
         stationConfigs = shopfloorServiceDataService.GetStationConfigs();
+        //Log.Information("Test", "UI");
         return base.OnInitializedAsync();
     }
 }

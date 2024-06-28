@@ -1,0 +1,122 @@
+﻿@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+<div class="panel">
+    <DxGridLayout RowSpacing="1rem">
+        <Rows>
+            <DxGridLayoutRow Height="auto"></DxGridLayoutRow>
+            <DxGridLayoutRow Height="auto"></DxGridLayoutRow>
+            <DxGridLayoutRow Height="auto"></DxGridLayoutRow>
+        </Rows>
+        <Columns>
+            <DxGridLayoutColumn></DxGridLayoutColumn>
+            <DxGridLayoutColumn></DxGridLayoutColumn>
+            <DxGridLayoutColumn></DxGridLayoutColumn>
+        </Columns>
+        <Items>
+            <DxGridLayoutItem Row="0" Column="0" ColumnSpan="4">
+                <Template>
+                    <div class="alert alert-success" role="alert">
+                        @WorkorderNo
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="0">
+                <Template>
+                    <div class="d-flex justify-content-evenly align-items-center">
+                        <DxButton Text="WIP" Enabled="false" RenderStyleMode="ButtonRenderStyleMode.Outline" RenderStyle="ButtonRenderStyle.Info"></DxButton>
+                    </div>
+                    
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="1">
+                <Template>
+                    <div class="d-flex justify-content-evenly align-items-center">
+                        <DxButton Text="OK" RenderStyleMode="ButtonRenderStyleMode.Outline" RenderStyle="ButtonRenderStyle.Success"></DxButton>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="1" Column="2">
+                <Template>
+                    <div class="d-flex justify-content-evenly align-items-center">
+                        <DxButton Text="NG" RenderStyleMode="ButtonRenderStyleMode.Outline" RenderStyle="ButtonRenderStyle.Danger"></DxButton>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="2" Column="0">
+                <Template>
+                    <div class="d-flex justify-content-evenly align-items-center">
+                        <DxProgressBar MaxValue="@target" Value="@wip" Type="ProgressBarType.Circular" ></DxProgressBar>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="2" Column="1">
+                <Template>
+                    <div class="d-flex justify-content-evenly align-items-center">
+                        <DxProgressBar MaxValue="@target" Value="@ok" Type="ProgressBarType.Circular"></DxProgressBar>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+            <DxGridLayoutItem Row="2" Column="2">
+                <Template>
+                    <div class="d-flex justify-content-evenly align-items-center">
+                        <DxProgressBar MaxValue="@target" Value="@ng" Type="ProgressBarType.Circular"></DxProgressBar>
+                    </div>
+                </Template>
+            </DxGridLayoutItem>
+        </Items>
+    </DxGridLayout>
+</div>
+
+@code {
+    [Parameter]
+    public string WorkorderNo { get; set; }
+
+    public List<StationWorkOrderPartDetail> stationWorkorderPartDetails { get; set; }
+
+    private bool hasData => stationWorkorderPartDetails.Any();
+
+    private int target => hasData ? stationWorkorderPartDetails.Sum(x => x.TargetAmount) : 0;
+
+    private int wip => hasData ? stationWorkorderPartDetails.Where(x => x.Status == 1 && x.WIP > 0).Sum(x => x.WIP) : 0;
+    private int queue => hasData ? target - wip - ok - ng : 0;
+
+    private int ok => hasData ? stationWorkorderPartDetails.Where(x => x.OKAmount > 0).Sum(x => x.OKAmount) : 0;
+    private int ng => hasData ? stationWorkorderPartDetails.Where(x => x.NGAmount > 0).Sum(x => x.NGAmount) : 0;
+
+    private double wipPercentage => target == 0 ? 0 : Math.Round((float)wip / (float)target * 100);
+    private double queuePercentage => target == 0 ? 0 : Math.Round((float)queue / (float)target * 100);
+    private double okPercentage => target == 0 ? 0 : Math.Round((float)ok / (float)target * 100);
+    private double ngPercentage => target == 0 ? 0 : Math.Round((float)ng / (float)target * 100);
+
+    DxProgressBar dxProgressBar;
+
+    protected override Task OnInitializedAsync()
+    {
+        shopfloorServiceDataService.WorkOrderDetailsAmountChangedAct += DataChanged;
+        return base.OnInitializedAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await InvokeAsync(() =>
+        {
+            UpdateData();
+            StateHasChanged();
+        });
+    }
+
+    private void DataChanged()
+    {
+        InvokeAsync(() =>
+        {
+            UpdateData();
+            StateHasChanged();
+        });
+    }
+
+    private async void UpdateData()
+    {
+        stationWorkorderPartDetails = await shopfloorServiceDataService.GetStationWorkOrderPartDetailByWorkorder(WorkorderNo);
+        Console.WriteLine($"{wip} {ok} {ng}");
+    }
+}

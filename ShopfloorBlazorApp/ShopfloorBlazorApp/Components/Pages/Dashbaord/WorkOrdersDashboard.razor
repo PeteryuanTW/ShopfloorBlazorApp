@@ -1,0 +1,38 @@
+﻿@page "/WorkOrdersDashboard"
+@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<NavComponent MasterRoute="WorkOrderDashboard" DetailRoutes="@workorder"></NavComponent>
+
+@* <div class="bggrid">
+    @foreach (WorkOrder wo in workorders)
+    {
+        <WorkorderProgressbar WorkorderNo="@wo.WorkOrderNo"></WorkorderProgressbar>
+    }
+</div> *@
+
+
+@code {
+    private List<WorkOrder> workorders = new();
+    private List<string> workorder => workorders.Select(x => x.ProcessName).Distinct().ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Init();
+        shopfloorServiceDataService.WorkOrderStatusChangedAct += WorkorderStatusChanged;
+    }
+
+    private async Task Init()
+    {
+        workorders = await shopfloorServiceDataService.GetWorkOrdersByStatus(new List<int> { 1, });
+    }
+
+    private void WorkorderStatusChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            await Init();
+            StateHasChanged();
+        });
+    }
+}

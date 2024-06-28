@@ -1,0 +1,26 @@
+﻿@page "/WorkorderPartDetailsDataPage"
+@rendermode InteractiveServer
+@inject IStringLocalizer<Lang> localizer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+<DxGrid Data="@stationWorkOrderPartDetails">
+    <Columns>
+        <DxGridDataColumn Caption="@($"{localizer["Station"]}")" FieldName="StationName" />
+        <DxGridDataColumn Caption="@($"{localizer["Workorder"]}")" FieldName="WorkOrderNo" />
+        <DxGridDataColumn Caption="@($"{localizer["Part Name"]}")" FieldName="PartName" />
+        <DxGridDataColumn Caption="@($"{localizer["Serial No"]}")" FieldName="SerialNO" />
+        <DxGridDataColumn Caption="@($"{localizer["WIP"]}")" FieldName="WIP" />
+        <DxGridDataColumn Caption="@($"{localizer["Target"]}")" FieldName="TargetAmount" />
+        <DxGridDataColumn Caption="@($"{localizer["OK"]}")" FieldName="OKAmount" />
+        <DxGridDataColumn Caption="@($"{localizer["NG"]}")" FieldName="NGAmount" />
+        <DxGridDataColumn Caption="@($"{localizer["Start Time"]}")" FieldName="StartTime" DisplayFormat="yyyy/MM/dd HH:mm:ss" />
+        <DxGridDataColumn Caption="@($"{localizer["Finish Time"]}")" FieldName="FinishedTime" DisplayFormat="yyyy/MM/dd HH:mm:ss" />
+        <DxGridDataColumn Caption="@($"{localizer["Status"]}")" FieldName="Status" />
+    </Columns>
+</DxGrid>
+@code {
+    private List<StationWorkOrderPartDetail> stationWorkOrderPartDetails;
+    protected override async Task OnInitializedAsync()
+    {
+        stationWorkOrderPartDetails = shopfloorServiceDataService.GetStationWorkOrderPartDetail();
+    }
+}

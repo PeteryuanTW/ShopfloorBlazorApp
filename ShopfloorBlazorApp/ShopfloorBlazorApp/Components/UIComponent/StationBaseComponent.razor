@@ -1,6 +1,7 @@
 ﻿@rendermode InteractiveServer
 @inject ShopfloorServiceDataService shopfloorServiceDataService
 
+<DxPopup HeaderText="Error Message" @bind-Visible="@showErrorMsg" BodyText="@stationBase.errorMsg" CloseOnOutsideClick="false" />
 @code {
     [Parameter]
     public StationConfig StationConfig { get; set; }
@@ -16,39 +17,65 @@
     public bool showErrorMsg = false;
     public bool showOperation = false;
 
-    public List<WorkOrder> workOrderCandidates;
+    //public List<WorkOrder> workOrderCandidates = new();//GetWorkOrdersByProcessAndStatus
+    public List<StationWorkOrderPartDetail> workOrderDetailCandidates = new();
+    public List<string> workOrderCandidates = new();// => workOrderDetailCandidates.DistinctBy(x => x.WorkOrderNo).Select(x => x.WorkOrderNo).ToList();
 
+    public Action? act;
 
-
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         stationBase = shopfloorServiceDataService.GetStationBaseByConfig(StationConfig);
+        await UpdateParametersList();
         shopfloorServiceDataService.StationChangedAct += StationBaseStateChanged;
-        workOrderCandidates = shopfloorServiceDataService.GetWorkOrdersNotDoneByProcessName(StationConfig.ProcessName);
-        return base.OnInitializedAsync();
+        shopfloorServiceDataService.SingleWorkOrderDetailsAmountChangedAct += stationBase.StationWorkOrderPartDetailUpdate;
+        stationBase.UpdateUIAct += UIUpdate;
+        stationBase.UpdateParameterListsAct += (async () => { await UpdateParametersList(); });
+    }
+
+    private async Task UpdateParametersList()
+    {
+        workOrderDetailCandidates = await shopfloorServiceDataService.GetStatusStartedWorkOrderDetailsByStationName(StationConfig.Name, new List<int> { 0, 1 });
+        workOrderCandidates = (await shopfloorServiceDataService.GetWorkOrdersByStatus(new List<int> { 1 })).Select(x=>x.WorkOrderNo).ToList();
+        await InvokeAsync(StateHasChanged);
     }
 
     public void ShowErrorPopup()
     {
         showErrorMsg = true;
+        InvokeAsync(StateHasChanged);
     }
 
-    public void ShowOperationPopup()
+    protected virtual void ShowOperationPopup()
     {
         showOperation = true;
     }
 
-    private void StationBaseStateChanged(StationBase newStationBase)
+    public void CloseOperationPopup()
+    {
+        showOperation = false;
+        StateHasChanged();
+    }
+
+    private async void StationBaseStateChanged(StationBase newStationBase)
     {
         if (newStationBase.name == StationConfig.Name)
         {
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-    protected ButtonRenderStyle GetStatusStyle(StationState stationState)
+    private void UIUpdate()
     {
-        switch (stationState)
+        InvokeAsync(() =>
+            {
+                StateHasChanged();
+            });
+    }
+
+    protected ButtonRenderStyle GetStatusStyle()
+    {
+        switch (stationBase.stationState)
         {
             case StationState.Uninit:
                 return ButtonRenderStyle.Secondary;
@@ -61,6 +88,24 @@
                 return ButtonRenderStyle.Danger;
             default:
                 return ButtonRenderStyle.None;
+        }
+    }
+
+    protected string GetPanelStatusStyle()
+    {
+        switch (stationBase.stationState)
+        {
+            case StationState.Uninit:
+                return "uninit";
+            case StationState.Running:
+                return "running";
+            case StationState.Pause:
+                return "pause";
+            case StationState.Stop:
+            case StationState.Error:
+                return "stop";
+            default:
+                return "uninit";
         }
     }
 

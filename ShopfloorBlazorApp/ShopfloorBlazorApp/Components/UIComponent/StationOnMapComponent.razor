@@ -1,0 +1,60 @@
+﻿@rendermode InteractiveServer
+
+<div class="@GetStatusStyle()" style="@cssString" @onclick="@OnClick">
+    <h2>
+        @_MapStationConfig.StationName
+    </h2>
+</div>
+
+@code {
+    [Parameter]
+    public MapStationConfig _MapStationConfig { get; set; }
+    [Parameter]
+    public EventCallback<string> ClickCallback { get; set; }
+    [Parameter]
+    public bool IsSelected { get; set; }
+
+    private string x => _MapStationConfig.stationBindingSuccess ? $"{_MapStationConfig.Position_x}%" : "0%";
+    private string y => _MapStationConfig.stationBindingSuccess ? $"{_MapStationConfig.Position_y}%" : "0%";
+    private string width => _MapStationConfig.stationBindingSuccess ? $"{_MapStationConfig.Width}%" : "0%";
+    private string height => _MapStationConfig.stationBindingSuccess ? $"{_MapStationConfig.Height}%" : "0%";
+
+    private string cssString => staticProperties + dynamicProperties + isSelected;
+
+    private string GetStatusStyle()
+    {
+        if (_MapStationConfig.stationBindingSuccess)
+        {
+            switch (_MapStationConfig.StationBase.stationState)
+            {
+                case StationState.Uninit:
+                    return "uninit";
+                case StationState.Pause:
+                    return "pause";
+                case StationState.Running:
+                    return "running";
+                case StationState.Error:
+                case StationState.Stop:
+                    return "stoperror";
+                default:
+                    return "uninit";
+            }
+        }
+        else
+        {
+            return "uninit";
+        }
+    }
+
+    private string staticProperties => "display:flex; align-items: center; justify-content: center; position: absolute; border-radius:0.5rem;";
+    private string dynamicProperties => $"left:{x}; top:{y}; width:{width}; height:{height};";
+    private string isSelected => IsSelected ? $"outline: 0.3em solid rgb(13, 204, 242);" : "";
+
+    private void OnClick(MouseEventArgs arg)
+    {
+        ClickCallback.InvokeAsync(_MapStationConfig.StationName);
+    }
+
+
+
+}

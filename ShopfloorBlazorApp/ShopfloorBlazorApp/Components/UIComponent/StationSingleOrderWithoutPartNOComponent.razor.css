@@ -1,10 +1,25 @@
 ﻿.panel {
     width: 20rem;
     height: 30rem;
+    background-color: rgb(45, 51, 57);
     border-radius: 1rem;
-    border-color: white;
 }
 
+.uninit {
+    border-color: white;
+}
+.running {
+    border-color: rgb(44, 170, 54);
+}
+.pause {
+    border-color: rgb(253, 126, 23);
+}
+.error {
+    border-color: rgb(220, 56, 72);
+}
+.stop {
+    border-color: rgb(220, 56, 72);
+}
 .containeralignmid {
     width: 100%;
     height: 100%;

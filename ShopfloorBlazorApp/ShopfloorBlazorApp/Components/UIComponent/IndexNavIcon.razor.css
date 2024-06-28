@@ -1,0 +1,30 @@
+﻿.bgcard {
+    width: 26.25rem;
+    height: 15rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    background-color: rgb(53, 59, 65);
+    gap: 2rem;
+}
+
+    .bgcard :hover {
+        cursor: pointer;
+    }
+.iconcontainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icon {
+    width: 6.5rem;
+    height: 6.5rem;
+}
+.text {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: 0em;
+    text-align: center;
+}

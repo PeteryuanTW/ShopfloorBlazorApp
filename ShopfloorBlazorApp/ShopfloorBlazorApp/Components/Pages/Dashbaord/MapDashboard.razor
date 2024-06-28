@@ -1,0 +1,118 @@
+﻿@page "/MapDashboard/{MapName}"
+@rendermode InteractiveServer
+@inject IStringLocalizer<Lang> localizer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<DxGridLayout RowSpacing="1em" ColumnSpacing="1em">
+    <Rows>
+        <DxGridLayoutRow></DxGridLayoutRow>
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn Width="9fr"></DxGridLayoutColumn>
+        <DxGridLayoutColumn Width="3fr"></DxGridLayoutColumn>
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="0" Column="0">
+            <Template>
+                <div style="position: relative">
+                    <img src="@path" style="width:100%; height:auto">
+                    @foreach (MapStationConfig mapStationConfig in mapStationConfigs)
+                    {
+                        <StationOnMapComponent _MapStationConfig="@mapStationConfig" IsSelected="StationIsSelected(mapStationConfig.StationName)" ClickCallback="StationClick"></StationOnMapComponent>
+                    }
+                </div>
+            </Template>
+
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="0" Column="1">
+            <Template>
+                @if (stationSelected)
+                {
+                    <DxStackLayout Orientation="Orientation.Vertical" ItemSpacing="1em">
+                        <Items>
+                            <DxStackLayoutItem Length="auto">
+                                <Template>
+                                    <DxComboBox Data="@mapStationConfigs" ClearButtonDisplayMode="DataEditorClearButtonDisplayMode.Auto" @bind-Value="@selectedMapStationConfig" EditFormat="{0}">
+                                        <Columns>
+                                            <DxListEditorColumn FieldName="@nameof(MapStationConfig.StationName)" />
+                                        </Columns>
+                                    </DxComboBox>
+                                </Template>
+                            </DxStackLayoutItem>
+                            <DxStackLayoutItem>
+                                <Template>
+                                    <DxTabs>
+                                        <DxTabPage Text="@($"{localizer["Station Info"]}")">
+                                            <StationBaseAttributeTabPage stationBase="@selectedMapStationConfig?.StationBase"></StationBaseAttributeTabPage>
+                                        </DxTabPage>
+                                        <DxTabPage Text="@($"{localizer["Station Config"]}")">
+                                            <DxFormLayout Data="@selectedMapStationConfig.StationBase" ReadOnly="true" CaptionPosition="CaptionPosition.Vertical">
+                                                <DxFormLayoutItem Caption="procedure" Field="@nameof(StationBase.procedureName)" />
+                                            </DxFormLayout>
+                                        </DxTabPage>
+                                        <DxTabPage Text="@($"{localizer["Map Config"]}")">
+                                            <DxFormLayout Data="@selectedMapStationConfig" ReadOnly="true" CaptionPosition="CaptionPosition.Vertical">
+                                                <DxFormLayoutItem Caption="x" Field="@nameof(MapStationConfig.Position_x)" />
+                                                <DxFormLayoutItem Caption="y" Field="@nameof(MapStationConfig.Position_y)" />
+                                                <DxFormLayoutItem Caption="@($"{localizer["Height"]}")" Field="@nameof(MapStationConfig.Height)" />
+                                                <DxFormLayoutItem Caption="@($"{localizer["Width"]}")" Field="@nameof(MapStationConfig.Width)" />
+                                            </DxFormLayout>
+                                        </DxTabPage>
+                                    </DxTabs>
+                                </Template>
+                            </DxStackLayoutItem>
+                        </Items>
+                    </DxStackLayout>
+                }
+            </Template>
+        </DxGridLayoutItem>
+    </Items>
+</DxGridLayout>
+
+
+
+@code {
+    [Parameter]
+    public string MapName { get; set; }
+    private MapConfig? mapConfig;
+    private string path => mapConfig.MapImageName;
+    private List<MapStationConfig> mapStationConfigs = new();
+    private MapStationConfig? selectedMapStationConfig;
+    private bool stationSelected => selectedMapStationConfig != null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        mapConfig = await shopfloorServiceDataService.GetMapConfigByName(MapName);
+        mapStationConfigs = await shopfloorServiceDataService.GetMapStationConfigs(MapName);
+        shopfloorServiceDataService.StationChangedAct += StationStatusChanged;
+    }
+
+    private void StationStatusChanged(StationBase stationBase)
+    {
+        if (mapStationConfigs.Exists(x => x.StationName == stationBase.name))
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void StationClick(string stationName)
+    {
+        var target = mapStationConfigs.FirstOrDefault(x => x.StationName == stationName);
+        if (target != null)
+        {
+            selectedMapStationConfig = target;
+        }
+    }
+
+    private bool StationIsSelected(string stationName)
+    {
+        if (!stationSelected)
+        {
+            return false;
+        }
+        else
+        {
+            return selectedMapStationConfig?.StationName == stationName;
+        }
+    }
+}

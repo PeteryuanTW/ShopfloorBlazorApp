@@ -1,169 +1,165 @@
-﻿@* @inject SignalRClientService signalRClientService
+﻿@inject IStringLocalizer<Lang> localizer
+@inject ShopfloorServiceSignalRClient shopfloorServiceSignalRClient
 @inject UIService uiService
-@inject IToastService toastService *@
-
+@inject IToastService toastService
 @rendermode InteractiveServer
-@* <BlazoredToasts Position="ToastPosition.BottomRight"
-                Timeout="5"
-                ShowProgressBar="true" /> *@
-<div class="card p-2 " style="margin:1rem">
-    @* @StateCss() *@
-    <DxMenu Orientation="Orientation.Horizontal"
-            DropDownActionMode="MenuDropDownActionMode.Click"
-            DisplayMode="MenuDisplayMode.Desktop"
-            CollapseItemsToHamburgerMenu="true"
-            CollapseItemToIconMode="MenuCollapseItemToIconMode.All">
-        <TitleTemplate>
-            <DxButton RenderStyle="ButtonRenderStyle.None" Click="@ShowPopup" Text="Shopfloor Service"></DxButton>
-        </TitleTemplate>
-        <Items>
-            <DxMenuItem Position="ItemPosition.Center" Text="Machine" IconCssClass="oi oi-laptop">
-                <Items>
-                    <DxMenuItem NavigateUrl="/MachinesDashboardPage" Text="Dashboard" IconCssClass="oi oi-grid-three-up" />
-                </Items>
-            </DxMenuItem>
-            <DxMenuItem Position="ItemPosition.Center" Text="Tags" IconCssClass="oi oi-tags">
-                <Items>
-                    <DxMenuItem Text="Tags Dashboard" IconCssClass="oi oi-list" />
-                    <DxMenuItem NavigateUrl="/TagCategory" Text="Tags Category" IconCssClass="oi oi-tag" />
-                    <DxMenuItem Text="Machine Tags" IconCssClass="oi oi-tag" />
-                </Items>
-            </DxMenuItem>
-            <DxMenuItem Position="ItemPosition.Center" Text="Test Tool" IconCssClass="oi oi-browser">
-                <Items>
-                    <DxMenuItem Text="Modbus" NavigateUrl="/TestTool" />
-                </Items>
-            </DxMenuItem>
-            <DxMenuItem Position="ItemPosition.Center" Text="Setting" IconCssClass="oi oi-cog">
-                <Items>
-                    <DxMenuItem Text="Service" IconCssClass="oi oi-rss" />
-                </Items>
-            </DxMenuItem>
-        </Items>
-    </DxMenu>
-</div>
 
-@* <DxPopup @bind-Visible="@popupVisible" ShowFooter="true" ShowHeader="true" CloseOnOutsideClick="false" Closed="ClosedPopup">
+<DxPopup @bind-Visible="@popupVisible" ShowFooter="true" ShowHeader="true" CloseOnOutsideClick="false" Closed="ClosedPopup">
     <BodyContentTemplate>
         Are you sure to @BodyText() to Server?
     </BodyContentTemplate>
     <FooterContentTemplate>
         <DxButton RenderStyle="@BtnStyle()" Text="Yes" Click="SwitchServerConnection" />
     </FooterContentTemplate>
-</DxPopup> *@
-@code {
-    // private SignalRConnectionState state;
+</DxPopup>
 
-    private bool popupVisible = false;
+<LoadingPanel />
+
+<BlazoredToasts Position="ToastPosition.BottomRight"
+                Timeout="5"
+                ShowProgressBar="true" />
+
+<div class="card p-2 @StateCss()" style="margin:1rem">
+    <DxMenu Orientation="Orientation.Horizontal"
+            DropDownActionMode="MenuDropDownActionMode.Click"
+            DisplayMode="MenuDisplayMode.Desktop"
+            CollapseItemsToHamburgerMenu="true"
+            CollapseItemToIconMode="MenuCollapseItemToIconMode.All">
+        <TitleTemplate>
+            <DxButton RenderStyle="ButtonRenderStyle.None" Click="@ShowPopup" Text="@($"{localizer["Shopfloor Service"]}")"></DxButton>
+        </TitleTemplate>
+        <Items>
+            <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Home"]}")" NavigateUrl="/" IconCssClass="oi oi-home" />
+            <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Shopfloor Dashboard"]}")" IconCssClass="oi oi-tablet">
+                <Items>
+                    <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Station"]}")" NavigateUrl="/StationsDashboard" IconCssClass="oi oi-laptop" />
+                    <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Workorder"]}")" NavigateUrl="/WorkOrdersDashboard" IconCssClass="oi oi-clipboard" />
+                    <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Map"]}")" NavigateUrl="/MapsDashboard" IconCssClass="oi oi-map" />
+                </Items>
+            </DxMenuItem><DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Shopfloor Data"]}")" IconCssClass="oi oi-info">
+                <Items>
+                    <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Process"]}")" NavigateUrl="/ProcessesDataPage" IconCssClass="oi oi-random" />
+                    <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Station"]}")" NavigateUrl="/StationsDataPage" IconCssClass="oi oi-laptop" />
+                    <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Workorder"]}")" NavigateUrl="/WorkOrdersDataPage" IconCssClass="oi oi-clipboard" />
+                    <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["History Data"]}")" NavigateUrl="/WorkorderPartDetailsDataPage" IconCssClass="oi oi-tag" />
+                </Items>
+            </DxMenuItem>
+            <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Setting"]}")" NavigateUrl="/SystemSetting" IconCssClass="oi oi-cog" />
+            <DxMenuItem Position="ItemPosition.Center" Text="@($"{localizer["Developer"]}")" NavigateUrl="/Developer" IconCssClass="oi oi-terminal" />
+        </Items>
+    </DxMenu>
+</div>
+
+@code {
+
+    private SignalRConnectionState state;
+    private bool popupVisible;
 
 
     protected override Task OnInitializedAsync()
     {
-        // state = signalRClientService.signalrState;
-        // signalRClientService.StateChangedAct += ConnectionStateChange;
-        // uiService.ToastAct += GetToast;
+        state = shopfloorServiceSignalRClient.signalrState;
+        popupVisible = uiService.signalRClientPopupVisible;
+        shopfloorServiceSignalRClient.StateChangedAct += ConnectionStateChange;
+        uiService.UIUpdateAct += UIUpdate;
+        uiService.ToastAct += ToastUpdate;
         return base.OnInitializedAsync();
     }
-
-    // private void GetToast(RequestResult res)
-    // {
-    //     switch (res.success)
-    //     {
-    //         case 0:
-    //             toastService.ShowInfo(res.msg);
-    //             break;
-    //         case 1:
-    //             toastService.ShowSuccess(res.msg);
-    //             break;
-    //         case 2:
-    //             toastService.ShowWarning(res.msg);
-    //             break;
-    //         case 3:
-    //             toastService.ShowError(res.msg);
-    //             break;
-    //         default:
-    //             toastService.ShowError($"unknow type({res.success}){res.msg}");
-    //             break;
-    //     }
-    // }
-
-    // private void ConnectionStateChange(SignalRConnectionState newState)
-    // {
-    //     InvokeAsync(() =>
-    //         {
-    //             state = newState;
-    //             StateHasChanged();
-    //         });
-    // }
+    private async void UIUpdate()
+    {
+        await InvokeAsync(() =>
+            {
+                popupVisible = uiService.signalRClientPopupVisible;
+                StateHasChanged();
+            });
+    }
+    private void ToastUpdate(RequestResult res)
+    {
+        if (res.success < 4)
+        {
+            toastService.ShowToast((ToastLevel)((int)res.success), res.msg);
+        }
+        else
+        {
+            toastService.ShowError($"unknow type({res.success}){res.msg}");
+        }
+    }
+    private async void ConnectionStateChange(SignalRConnectionState newState)
+    {
+        await InvokeAsync(() =>
+            {
+                state = newState;
+                StateHasChanged();
+            });
+    }
+    private string StateCss()
+    {
+        switch (state)
+        {
+            case SignalRConnectionState.Init:
+                return "init";
+            case SignalRConnectionState.Connected:
+                return "connect";
+            case SignalRConnectionState.Connecting:
+                return "connecting";
+            case SignalRConnectionState.Disconnected:
+                return "disconnect";
+            default:
+                return "init";
+        }
+    }
 
     private void ShowPopup()
     {
-        popupVisible = true;
+        uiService.ShowSignalRClientPopup();
     }
 
     private void ClosedPopup()
     {
-        popupVisible = false;
+        uiService.CloseSignalRClientPopup();
     }
 
-    // private async Task SwitchServerConnection()
-    // {
-    //     RequestResult res;
-    //     if (state == SignalRConnectionState.Connected)
-    //     {
-    //         res = await signalRClientService.DisconnectToSignalRServer();
-    //     }
-    //     else if (state == SignalRConnectionState.Disconnected)
-    //     {
-    //         res = await signalRClientService.ConnectToSignalRServer();
-    //     }
-    //     else
-    //     {
-    //         res = new RequestResult(3, "");
-    //     }
-    //     popupVisible = false;
-    //     //uiService.ShowResultToast(res);
-    //     GetToast(res);
-    // }
-
-
-
-    // private string StateCss()
-    // {
-    //     switch (state)
-    //     {
-    //         case SignalRConnectionState.Init:
-    //             return "init";
-    //         case SignalRConnectionState.Connected:
-    //             return "connect";
-    //         case SignalRConnectionState.Disconnected:
-    //             return "disconnect";
-    //         case SignalRConnectionState.Connecting:
-    //             return "connecting";
-    //         default:
-    //             return "";
-    //     }
-    // }
-    // private string BodyText()
-    // {
-    //     if (state == SignalRConnectionState.Connected)
-    //     {
-    //         return "Disconnect";
-    //     }
-    //     else
-    //     {
-    //         return "Connect";
-    //     }
-    // }
-    // private ButtonRenderStyle BtnStyle()
-    // {
-    //     if (state == SignalRConnectionState.Connected)
-    //     {
-    //         return ButtonRenderStyle.Danger;
-    //     }
-    //     else
-    //     {
-    //         return ButtonRenderStyle.Success;
-    //     }
-    // }
+    private async Task SwitchServerConnection()
+    {
+        uiService.CloseSignalRClientPopup();
+        RequestResult res;
+        if (state == SignalRConnectionState.Connected)
+        {
+            uiService.ShowPanel("Disconnecting...");
+            res = await shopfloorServiceSignalRClient.DisconnectToSignalRServer();
+        }
+        else if (state == SignalRConnectionState.Disconnected)
+        {
+            uiService.ShowPanel("Connecting...");
+            res = await shopfloorServiceSignalRClient.ConnectToSignalRServer("s", 0);
+        }
+        else
+        {
+            res = new RequestResult(3, "");
+        }
+        uiService.ClosePanel();
+        uiService.ShowResultToast(res);
+    }
+    private string BodyText()
+    {
+        if (state == SignalRConnectionState.Connected)
+        {
+            return "Disconnect";
+        }
+        else
+        {
+            return "Connect";
+        }
+    }
+    private ButtonRenderStyle BtnStyle()
+    {
+        if (state == SignalRConnectionState.Connected)
+        {
+            return ButtonRenderStyle.Danger;
+        }
+        else
+        {
+            return ButtonRenderStyle.Success;
+        }
+    }
 }

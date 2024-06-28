@@ -1,0 +1,15 @@
+﻿@page "/MapsDashboard"
+@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<NavComponent MasterRoute="MapDashboard" DetailRoutes="mapNames"></NavComponent>
+
+@code {
+    private List<MapConfig> mapConfigs = new();
+    private List<string> mapNames => mapConfigs.Select(x => x.MapName).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        mapConfigs = await shopfloorServiceDataService.GetAllMapConfigs();
+    }
+}

@@ -1,0 +1,131 @@
+﻿@inject IStringLocalizer<Lang> localizer
+
+@if (!isLoading)
+{
+    @if (hasStationBase)
+    {
+        @if (stationBase?.stationState == StationState.Error || stationBase?.stationState == StationState.Stop)
+        {
+            <div class="alert alert-danger" role="alert">
+                @($"{localizer[stationBase?.stationState.ToString()]}")
+                @* @stationBase?.stationState.ToString() *@
+            </div>
+            if (stationBase?.stationState == StationState.Error)
+            {
+                <DxMemo @bind-Text="@stationBase.errorMsg" ReadOnly="true"></DxMemo>
+            }
+        }
+        else
+        {
+            <div class="@StatusAlertCss()" role="alert">
+                @($"{localizer[stationBase?.stationState.ToString()]}")
+                @* @stationBase?.stationState.ToString() *@
+            </div>
+            switch (stationBase?.type)
+            {
+                case 0:
+                    StationSingleOrderWithPartNO stationSingleOrderWithPartNO = (StationSingleOrderWithPartNO)stationBase;
+                    <DxFormLayout Data="@stationSingleOrderWithPartNO"  ReadOnly="true" CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem Caption="@($"{localizer["Workorder"]}")" Field="@nameof(StationSingleOrderWithPartNO.workorder)" ColSpanLg="12" />
+                        <DxFormLayoutItem ColSpanLg="12">
+                            <DxListBox Data="@stationSingleOrderWithPartNO.StationWorkOrderPartDetails" TData="StationWorkOrderPartDetail" TValue="StationWorkOrderPartDetail" ReadOnly="true">
+                                <Columns>
+                                    <DxListEditorColumn Caption="@($"{localizer["Part Name"]}")" FieldName="@nameof(StationWorkOrderPartDetail.PartName)"></DxListEditorColumn>
+                                    <DxListEditorColumn Caption="@($"{localizer["Serial No"]}")" FieldName="@nameof(StationWorkOrderPartDetail.SerialNO)"></DxListEditorColumn>
+                                    <DxListEditorColumn Caption="@($"{localizer["Start Time"]}")" FieldName="@nameof(StationWorkOrderPartDetail.StartTime)"></DxListEditorColumn>
+                                </Columns>
+                            </DxListBox>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                    break;
+                case 1:
+                    StationSingleOrderWithoutPartNO stationSingleOrderWithoutPartNO = (StationSingleOrderWithoutPartNO)stationBase;
+                    <DxFormLayout Data="@stationSingleOrderWithoutPartNO" ReadOnly="true" CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem Caption="workorder" Field="@nameof(StationSingleOrderWithoutPartNO.workorder)" />
+                        <DxFormLayoutItem Caption="WIP" Field="@nameof(StationSingleOrderWithoutPartNO.currentAmount)" />
+                        <DxFormLayoutItem Caption="target" Field="@nameof(StationSingleOrderWithoutPartNO.targetAmount)" />
+                        <DxFormLayoutItem Caption="ok" Field="@nameof(StationSingleOrderWithoutPartNO.OKAmount)" />
+                        <DxFormLayoutItem Caption="ng" Field="@nameof(StationSingleOrderWithoutPartNO.NGAmount)" />
+                    </DxFormLayout>
+                    break;
+                case 2:
+                    <div class="alert alert-warning" role="alert">
+                        type @stationBase?.type not implemett yet
+                    </div>
+                    break;
+                case 3:
+                    <div class="alert alert-warning" role="alert">
+                        type @stationBase?.type not implemett yet
+                    </div>
+                    break;
+                default:
+                    <div class="alert alert-warning" role="alert">
+                        type @stationBase?.type not found
+                    </div>
+                    break;
+            }
+        }
+    }
+    else
+    {
+        <div class="alert alert-danger" role="alert">
+            StationBase data loss
+        </div>
+    }
+}
+else
+{
+    <DxWaitIndicator Visible="@isLoading" AnimationType="WaitIndicatorAnimationType.Spin" />
+}
+
+
+@code {
+    [Parameter]
+    public StationBase? stationBase { get; set; }
+    private bool hasStationBase => stationBase != null;
+
+    private bool isLoading = false;
+
+    protected override Task OnInitializedAsync()
+    {
+        isLoading = true;
+        return base.OnInitializedAsync();
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        return base.OnParametersSetAsync();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isLoading = false;
+        }
+        InvokeAsync(StateHasChanged);
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+    private string StatusAlertCss()
+    {
+        if (!hasStationBase)
+        {
+            return "alert alert-danger";
+        }
+        switch (stationBase?.stationState)
+        {
+            case StationState.Uninit:
+                return "alert alert-secondary";
+            case StationState.Stop:
+            case StationState.Error:
+                return "alert alert-danger";
+            case StationState.Pause:
+                return "alert alert-warning";
+            case StationState.Running:
+                return "alert alert-success";
+            default:
+                return "alert alert-secondary";
+        }
+    }
+}

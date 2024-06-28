@@ -1,0 +1,23 @@
+﻿@page "/ProcessesDataPage"
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<DxGrid Data="@processes">
+    <ToolbarTemplate>
+        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
+            <DxToolbarItem IconCssClass="oi oi-plus" />
+            <DxToolbarItem IconCssClass="oi oi-pencil" />
+            <DxToolbarItem IconCssClass="oi oi-trash" />
+        </DxToolbar>
+    </ToolbarTemplate>
+    <Columns>
+        <DxGridDataColumn FieldName="ProcessName" />
+    </Columns>
+</DxGrid>
+
+@code {
+    private List<ProcessConfig> processes;
+    protected override async Task OnInitializedAsync()
+    {
+        processes = await shopfloorServiceDataService.GetProcessConfigs();
+    }
+}

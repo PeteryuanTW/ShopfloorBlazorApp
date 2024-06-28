@@ -1,0 +1,78 @@
+﻿@page "/SystemSetting"
+@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<DxFormLayout CssClass="w-100" CaptionPosition="CaptionPosition.Vertical">
+    @foreach (SystemConfig systemConfig in systemConfigs)
+    {
+        <DxFormLayoutItem Caption="@systemConfig.ConfigName" BeginRow="true" ColSpanLg="3">
+            @if (systemConfig.ValueType == 0) { }
+            @if (systemConfig.ValueType == 1) { }
+            @if (systemConfig.ValueType == 2) { }
+            else if (systemConfig.ValueType == 3)
+            {
+                List<string> sources = shopfloorServiceDataService.GetSystemConfigList(systemConfig.ConfigName);
+                <DxComboBox Data="@sources" Value="systemConfig.Value" ValueChanged="((string s)=>ValueChanged(systemConfig, s))"></DxComboBox>
+            }
+        </DxFormLayoutItem>
+    }
+    <DxFormLayoutItem BeginRow="true">
+        <DxButton Text="Save" Click="UpdateConfigs"></DxButton>
+    </DxFormLayoutItem>
+</DxFormLayout>
+
+
+@code {
+    private List<SystemConfig> systemConfigs;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshConfig();
+    }
+
+    private async void ValueChanged(SystemConfig systemConfig, string val)
+    {
+        try
+        {
+            if (systemConfig.ValueType == 0)
+            {
+                bool b = Boolean.Parse(val);
+            }
+            else if (systemConfig.ValueType == 1)
+            {
+                int i = Int32.Parse(val);
+            }
+            else if (systemConfig.ValueType == 2)
+            {
+                float f = Int32.Parse(val);
+            }
+            else if (systemConfig.ValueType == 3)
+            {
+
+            }
+            var target = systemConfigs.FirstOrDefault(x => x.ConfigName == systemConfig.ConfigName);
+            if (target != null)
+            {
+                target.Value = val;
+            }
+        }
+        catch (Exception e)
+        {
+
+        }
+    }
+
+    private async Task UpdateConfigs()
+    {
+        foreach (SystemConfig systemConfig in systemConfigs)
+        {
+            await shopfloorServiceDataService.UpdateSystemConfigs(systemConfig);
+        }
+        await RefreshConfig();
+    }
+
+    private async Task RefreshConfig()
+    {
+        systemConfigs = await shopfloorServiceDataService.GetSystemConfigs();
+    }
+}

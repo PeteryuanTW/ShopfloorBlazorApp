@@ -1,0 +1,11 @@
+﻿.card {
+    height: 10rem;
+    width: 10rem;
+    background-color: rgb(53, 59, 65);
+    font-size: larger;
+}
+
+    .card:hover {
+        cursor: pointer;
+        outline:0.2rem solid white;
+    }

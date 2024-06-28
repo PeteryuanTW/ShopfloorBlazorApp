@@ -1,0 +1,135 @@
+﻿@page "/WorkOrdersDataPage"
+@rendermode InteractiveServer
+@inject IStringLocalizer<Lang> localizer
+@inject NavigationManager nav
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+@inject EditMode editMode
+
+<DxGrid @ref="@WorkordersIGrid" Data="@workorders"
+        FocusedRowEnabled="true" FocusedRowChanged="FocusedRowChanged"  ShowFilterRow="true">
+    <ToolbarTemplate>
+        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
+            <DxToolbarItem Click="NewItem_Click" IconCssClass="oi oi-plus" />
+            <DxToolbarItem Click="EditItem_Click" IconCssClass="oi oi-pencil" />
+            <DxToolbarItem Click="DeleteItem_Click" IconCssClass="oi oi-trash" />
+        </DxToolbar>
+    </ToolbarTemplate>
+    <Columns>
+        <DxGridDataColumn FieldName="WorkOrderNo" Caption="@($"{localizer["Workorder"]}")"/>
+        <DxGridDataColumn FieldName="HasSerialNo" Caption="@($"{localizer["Has SerialNo"]}")" />
+        <DxGridDataColumn FieldName="ProcessName" Caption="@($"{localizer["Process"]}")" />
+        <DxGridDataColumn FieldName="Okamount" Caption="@($"{localizer["OK"]}")" />
+        <DxGridDataColumn FieldName="Ngamount" Caption="@($"{localizer["NG"]}")" />
+        <DxGridDataColumn FieldName="TargetAmount" Caption="@($"{localizer["Target"]}")" />
+        <DxGridDataColumn FieldName="StartTime" Caption="@($"{localizer["Start Time"]}")" DisplayFormat="yyyy/MM/dd HH:mm:ss" />
+        <DxGridDataColumn FieldName="FinishedTime" Caption="@($"{localizer["Finish Time"]}")" DisplayFormat="yyyy/MM/dd HH:mm:ss" />
+        <DxGridDataColumn FieldName="Status" Caption="@($"{localizer["Status"]}")" />
+        <DxGridDataColumn Caption="">
+            <CellDisplayTemplate>
+                <div style="display: flex; justify-content: center;">
+                    <DxButton IconCssClass="oi oi-ellipses" Click="@(()=>NavToWorkorderPart(((WorkOrder)context.DataItem).WorkOrderNo))" />
+                </div>
+            </CellDisplayTemplate>
+        </DxGridDataColumn>
+    </Columns>
+</DxGrid>
+<DxPopup @bind-Visible="@showEditPopup" CloseOnOutsideClick="false" HeaderText="@editMode.text" ShowFooter="true">
+    <BodyContentTemplate Context="PopupContext">
+        <DxFormLayout>
+            <DxFormLayoutItem Caption="WorkOrderNo">
+                <DxTextBox @bind-Text="@targetWorkorder.WorkOrderNo" ReadOnly="@(!editMode.pkeditable)"></DxTextBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="HasPartNo">
+                <DxCheckBox @bind-Checked="@targetWorkorder.HasSerialNo"></DxCheckBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="ProcessName">
+                <DxComboBox Data="@processNames" Value="@targetWorkorder.ProcessName" ValueChanged="((string p)=>{ProcessChanged(targetWorkorder, p);})"></DxComboBox>
+            </DxFormLayoutItem>
+            <DxFormLayoutItem Caption="TargetAmount">
+                <DxSpinEdit @bind-Value="@targetWorkorder.TargetAmount" MinValue="1"></DxSpinEdit>
+            </DxFormLayoutItem>
+        </DxFormLayout>
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <DxButton Click="UpsertClicked" RenderStyle="ButtonRenderStyle.Primary" IconCssClass="oi oi-check" />
+    </FooterContentTemplate>
+</DxPopup>
+<DxPopup @bind-Visible="@showDeletePopup" CloseOnOutsideClick="false" ShowFooter="true" HeaderText="@editMode.text">
+    <BodyContentTemplate Context="PopupContext">
+        Are you sure to delete workorder @targetWorkorder.WorkOrderNo?
+    </BodyContentTemplate>
+    <FooterContentTemplate>
+        <DxButton Click="DeleteClicked" RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-check" />
+    </FooterContentTemplate>
+</DxPopup>
+
+@code {
+    IGrid WorkordersIGrid { get; set; }
+    bool showEditPopup { get; set; }
+    bool showDeletePopup { get; set; }
+    int FocusedRowVisibleIndex { get; set; }
+
+    private List<ProcessConfig> processConfigs;
+    private List<string> processNames => processConfigs.Select(x => x.ProcessName).ToList();
+    private List<WorkOrder> workorders;
+    private WorkOrder? targetWorkorder;
+    protected override async Task OnInitializedAsync()
+    {
+        await Init();
+    }
+
+    private async Task Init()
+    {
+        processConfigs = await shopfloorServiceDataService.GetProcessConfigs();
+        workorders = await shopfloorServiceDataService.GetWorkOrders();
+        targetWorkorder = new();
+    }
+    private void FocusedRowChanged(GridFocusedRowChangedEventArgs args)
+    {
+        FocusedRowVisibleIndex = args.VisibleIndex;
+        targetWorkorder = (WorkOrder)args.DataItem;
+    }
+    private void NewItem_Click()
+    {
+        editMode.New();
+        showEditPopup = true;
+        targetWorkorder = new WorkOrder();
+    }
+
+    private void EditItem_Click()
+    {
+        editMode.Edit();
+        showEditPopup = true;
+        targetWorkorder = new WorkOrder(workorders[FocusedRowVisibleIndex]);
+    }
+
+    private void DeleteItem_Click()
+    {
+        editMode.Delete();
+        showDeletePopup = true;
+        targetWorkorder = new WorkOrder(workorders[FocusedRowVisibleIndex]);
+    }
+
+    private void ProcessChanged(WorkOrder workorders, string processName)
+    {
+        workorders.ProcessName = processName;
+    }
+
+    private async Task UpsertClicked()
+    {
+        RequestResult res = await shopfloorServiceDataService.UpsertWorkOrder(targetWorkorder);
+        await Init();
+        showEditPopup = false;
+    }
+    private async Task DeleteClicked()
+    {
+        RequestResult res = await shopfloorServiceDataService.DeleteWorkOrder(targetWorkorder);
+        await Init();
+        showDeletePopup = false;
+    }
+
+    private void NavToWorkorderPart(string wo)
+    {
+        nav.NavigateTo($"/WorkorderParts/{wo}");
+    }
+}

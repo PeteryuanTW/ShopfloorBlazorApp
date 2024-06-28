@@ -1,0 +1,110 @@
+﻿@page "/StationDashboard/{Process}"
+@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<div class="h-100">
+    <DxStackLayout Orientation="Orientation.Vertical" ItemSpacing="5em" CssClass="h-100">
+        <Items>
+            <DxStackLayoutItem Length="auto">
+                <Template>
+                    <div>
+                        <StationBasesOperationComponent Process="@Process"
+                                                        SetAllStationsWorkorderCallback="SetAllStationsWorkorder"
+                                                        RunAllStationsCallback="RunAllStations"
+                                                        PauseAllStationsCallback="PauseAllStations"
+                                                        StopAllStationsCallback="StopAllStations"
+                                                        ResetAllStationsCallback="ResetAllStations" />
+                    </div>
+                </Template>
+            </DxStackLayoutItem>
+            <DxStackLayoutItem Length="auto">
+                <Template>
+                    <div class="stationsarea h-100">
+                        @foreach (StationConfig stationConfig in stationConfigs)
+                        {
+                            <StationGatewayComponent StationConfig="@stationConfig"></StationGatewayComponent>
+                        }
+                    </div>
+                </Template>
+            </DxStackLayoutItem>
+        </Items>
+    </DxStackLayout>
+</div>
+
+
+@code {
+    [Parameter]
+    public string Process { get; set; }
+
+    private List<StationConfig> stationConfigs;
+    protected override Task OnInitializedAsync()
+    {
+        stationConfigs = shopfloorServiceDataService.GetStationConfigsByProcess(Process);
+        return base.OnInitializedAsync();
+    }
+
+    private async Task SetAllStationsWorkorder(string wo)
+    {
+        List<Task> tasks = new();
+        foreach (StationConfig stationConfig in stationConfigs)
+        {
+            tasks.Add(Task.Run(async () =>
+            {
+                await shopfloorServiceDataService.SetWorkorderByStationName(stationConfig.Name, wo);
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task RunAllStations()
+    {
+        List<Task> tasks = new();
+        foreach (StationConfig stationConfig in stationConfigs)
+        {
+            tasks.Add(Task.Run(async () =>
+            {
+                await shopfloorServiceDataService.RunStationByName(stationConfig.Name);
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task StopAllStations(string wo)
+    {
+        List<Task> tasks = new();
+        foreach (StationConfig stationConfig in stationConfigs)
+        {
+            tasks.Add(Task.Run(async () =>
+            {
+                await shopfloorServiceDataService.StopStationByName(stationConfig.Name, wo);
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task PauseAllStations()
+    {
+        List<Task> tasks = new();
+        foreach (StationConfig stationConfig in stationConfigs)
+        {
+            tasks.Add(Task.Run(async () =>
+            {
+                await shopfloorServiceDataService.PauseStationByName(stationConfig.Name);
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task ResetAllStations()
+    {
+        List<Task> tasks = new();
+        foreach (StationConfig stationConfig in stationConfigs)
+        {
+            tasks.Add(Task.Run(async () =>
+            {
+                await shopfloorServiceDataService.ResetStationByName(stationConfig.Name);
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+}

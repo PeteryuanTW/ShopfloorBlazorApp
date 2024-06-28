@@ -1,0 +1,125 @@
+﻿@rendermode InteractiveServer
+@inject IStringLocalizer<Lang> localizer
+@inject NavigationManager nav
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<DxToolbar ItemRenderStyleMode="@ToolbarRenderStyleMode.Contained" SizeMode="SizeMode.Large" Title="@Process">
+    <Items>
+        <DxToolbarItem RenderStyle="ButtonRenderStyle.Secondary" IconCssClass="oi oi-plus" Click="ShowPopup" BeginGroup="true" />
+        <DxToolbarItem RenderStyle="ButtonRenderStyle.Success" IconCssClass="oi oi-media-play" Click="RunStations" BeginGroup="true" />
+        <DxToolbarItem RenderStyle="ButtonRenderStyle.Warning" IconCssClass="oi oi-media-pause" Click="PauseStations"  BeginGroup="true" />
+        <DxToolbarItem RenderStyle="ButtonRenderStyle.Danger" IconCssClass="oi oi-media-stop" Click="ShowPopup" BeginGroup="true" />
+        <DxToolbarItem RenderStyle="ButtonRenderStyle.Secondary" IconCssClass="oi oi-reload" Click="ResetStations" BeginGroup="true" />
+    </Items>
+</DxToolbar>
+
+<DxPopup @bind-Visible="@visible" CloseOnOutsideClick="false">
+    <BodyContentTemplate>
+    
+            <DxTabs>
+                <DxTabPage Text="@($"{localizer["Run"]}")">
+                    <DxFormLayout>
+                        <DxFormLayoutItem Caption="@($"{localizer["Workorder"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="inamountcontext">
+                        <DxComboBox Data="workorders_start" @bind-Value="@selectedWorkorder_start" EditFormat="{0}">
+                                <Columns>
+                                    <DxListEditorColumn FieldName="@nameof(WorkOrder.WorkOrderNo)" />
+                                </Columns>
+                            </DxComboBox>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="stationincontext">
+                        <DxButton Text="@($"{localizer["Run"]}")" Click="SetStationsWorkorder" Enabled="@hasWO_start"></DxButton>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </DxTabPage>
+                <DxTabPage Text="@($"{localizer["Stop"]}")">
+                    <DxFormLayout>
+                        <DxFormLayoutItem Caption="@($"{localizer["Workorder"]}")" CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="inamountcontext">
+                        <DxComboBox Data="workorders_finish" @bind-Value="@selectedWorkorder_finish" EditFormat="{0}">
+                                <Columns>
+                                    <DxListEditorColumn FieldName="@nameof(WorkOrder.WorkOrderNo)" />
+                                </Columns>
+                            </DxComboBox>
+                        </DxFormLayoutItem>
+                        <DxFormLayoutItem CaptionPosition="CaptionPosition.Vertical" ColSpanLg="12" Context="stationincontext">
+                        <DxButton Text="@($"{localizer["Run"]}")" Click="StopStations" Enabled="@hasWO_finish"></DxButton>
+                        </DxFormLayoutItem>
+                    </DxFormLayout>
+                </DxTabPage>
+            </DxTabs>
+        
+    </BodyContentTemplate>
+</DxPopup>
+
+@code {
+    [Parameter]
+    public string Process { get; set; } = String.Empty;
+    [Parameter]
+    public EventCallback<string> SetAllStationsWorkorderCallback { get; set; }
+    [Parameter]
+    public EventCallback RunAllStationsCallback { get; set; }
+    [Parameter]
+    public EventCallback PauseAllStationsCallback { get; set; }
+    [Parameter]
+    public EventCallback<string> StopAllStationsCallback { get; set; }
+    [Parameter]
+    public EventCallback ResetAllStationsCallback { get; set; }
+
+    private bool visible;
+
+    private List<WorkOrder> workorders_start;
+    private WorkOrder? selectedWorkorder_start;
+    private bool hasWO_start => selectedWorkorder_start != null;
+
+    private List<WorkOrder> workorders_finish;
+    private WorkOrder? selectedWorkorder_finish;
+    private bool hasWO_finish => selectedWorkorder_finish != null;
+
+    private async Task ShowPopup()
+    {
+        await InitParameterList();
+        visible = true;
+    }
+
+    private async Task InitParameterList()
+    {
+        workorders_start = await shopfloorServiceDataService.GetWorkOrdersByProcessAndStatus(Process, new List<int> { 1 });
+        selectedWorkorder_start = workorders_start.FirstOrDefault();
+
+        workorders_finish = await shopfloorServiceDataService.GetWorkOrdersByProcessAndStatus(Process, new List<int> { 1 });
+        selectedWorkorder_finish = workorders_start.FirstOrDefault();
+
+        visible = true;
+    }
+
+    private async Task SetStationsWorkorder()
+    {
+        await SetAllStationsWorkorderCallback.InvokeAsync(selectedWorkorder_start?.WorkOrderNo);
+        ClosePopup();
+    }
+
+    private async Task RunStations()
+    {
+        await RunAllStationsCallback.InvokeAsync();
+    }
+
+    private async Task PauseStations()
+    {
+        await PauseAllStationsCallback.InvokeAsync();
+    }
+
+    private async Task StopStations()
+    {
+        await StopAllStationsCallback.InvokeAsync(selectedWorkorder_finish?.WorkOrderNo);
+        ClosePopup();
+    }
+
+    private async Task ResetStations()
+    {
+        await ResetAllStationsCallback.InvokeAsync();
+    }
+
+    private void ClosePopup()
+    {
+        visible = false;
+    }
+}

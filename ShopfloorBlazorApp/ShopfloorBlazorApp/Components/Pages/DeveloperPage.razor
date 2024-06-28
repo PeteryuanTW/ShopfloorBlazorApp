@@ -1,0 +1,171 @@
+﻿@page "/Developer"
+@rendermode InteractiveServer
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<DxGridLayout RowSpacing="0.5rem" ColumnSpacing="0.5rem">
+    <Rows>
+        <DxGridLayoutRow Height="100%" />
+    </Rows>
+    <Columns>
+        <DxGridLayoutColumn Width="5fr" />
+        <DxGridLayoutColumn Width="7fr" />
+    </Columns>
+    <Items>
+        <DxGridLayoutItem Row="0" Column="0">
+            <Template>
+                <div class="card areacard">
+                    <DxFormLayout CaptionPosition="CaptionPosition.Vertical">
+                        <DxFormLayoutItem Caption="Command">
+                            <DxComboBox Data="@developerCommands" Value="@selectedCommand" ValueChanged="((DeveloperCommand cmd)=>OnCommandChanged(cmd))" EditFormat="({0}){1}" NullText="select a command...">
+                                <Columns>
+                                    <DxListEditorColumn FieldName="@nameof(DeveloperCommand.CommandCode)" />
+                                    <DxListEditorColumn FieldName="@nameof(DeveloperCommand.CommandName)" />
+                                </Columns>
+                            </DxComboBox>
+                        </DxFormLayoutItem>
+                        @if (cmdSelected)
+                        {
+                            @foreach (DeveloperCommandParam param in paramList)
+                            {
+                                <DxFormLayoutItem Caption="@($"{param.hint}({param.typeString})")" BeginRow="true">
+                                    <DxTextBox @bind-Text="@param.param"></DxTextBox>
+                                </DxFormLayoutItem>
+                            }
+                            <DxFormLayoutItem BeginRow="true">
+                                <DxButton Text="Run" Click="@RunCMD"></DxButton>
+                            </DxFormLayoutItem>
+                        }
+                    </DxFormLayout>
+                </div>
+            </Template>
+        </DxGridLayoutItem>
+        <DxGridLayoutItem Row="0" Column="1">
+            <Template>
+                <div class="card areacard">
+                    <DxMemo @bind-Text="@logs" ReadOnly="true" ResizeMode="MemoResizeMode.Disabled" CssClass="h-100"></DxMemo>
+                </div>
+            </Template>
+        </DxGridLayoutItem>
+    </Items>
+</DxGridLayout>
+@code {
+    private string logs = string.Empty;
+    private string param = string.Empty;
+
+    private List<DeveloperCommand> developerCommands = new();
+    private DeveloperCommand? selectedCommand;
+    private bool cmdSelected => selectedCommand != null;
+
+    private List<DeveloperCommandParam> paramList = new();
+    private string cmd;
+
+    protected override async Task OnInitializedAsync()
+    {
+        developerCommands = await shopfloorServiceDataService.GetDeveloperCommands();
+    }
+    private void OnCommandChanged(DeveloperCommand cmd)
+    {
+        selectedCommand = cmd;
+        List<string> paramNameList = selectedCommand.Hint.Split(",").ToList();
+        List<string> paramTypeList = selectedCommand.ParameterType.Split(",").ToList();
+
+        GenerateParamList(paramNameList, paramTypeList);
+
+    }
+
+    private void GenerateParamList(List<string> paramNameList, List<string> paramTypeList)
+    {
+        paramList = new();
+        if (paramNameList.Count != paramTypeList.Count)
+        {
+            return;
+        }
+        else
+        {
+            try
+            {
+                int length = paramNameList.Count;
+                for (int i = 0; i < length; i++)
+                {
+                    paramList.Add(new DeveloperCommandParam(paramNameList[i], Convert.ToInt32(paramTypeList[i])));
+                }
+            }
+            catch (Exception e)
+            {
+                paramList = new();
+                AddLog(e.Message);
+                return;
+            }
+        }
+    }
+
+    private bool ValidParam()
+    {
+        bool res = true;
+        foreach (DeveloperCommandParam param in paramList)
+        {
+            try
+            {
+                switch (param.type)
+                {
+                    case 0:
+                        bool b = Boolean.Parse(param.param);
+                        break;
+                    case 1:
+                        int i = Int32.Parse(param.param);
+                        break;
+                    case 2:
+                        float f = Int32.Parse(param.param);
+                        break;
+                    case 3:
+                        break;
+                    default:
+                        res = false;
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                AddLog(e.Message);
+                res = false;
+            }
+        }
+        return res;
+    }
+
+    private void AddLog(string s)
+    {
+        logs += (DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + ": " + s + "\n");
+    }
+    private async Task RunCMD()
+    {
+        if (ValidParam())
+        {
+            try
+            {
+                switch (selectedCommand.CommandCode)
+                {
+                    case 0:
+                        AddLog("command test success");
+                        break;
+                    case 1:
+                        string wo = paramList[0].param;
+                        RequestResult res = await shopfloorServiceDataService.ResetWorkOrder(wo);
+                        AddLog($"{res.msg}");
+                        break;
+                    default:
+                        AddLog($"Undefined cmd:{cmd}");
+                        break;
+                }
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                AddLog($"parameter format wrong");
+            }
+            catch (Exception e)
+            {
+                AddLog(e.Message);
+            }
+        }
+    }
+}

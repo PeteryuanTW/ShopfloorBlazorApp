@@ -1,0 +1,42 @@
+﻿@rendermode InteractiveServer
+<div class=@($"h-100 w-100 ") style="background-color:azure">
+    <DxGridLayout>
+        <Rows>
+            @for (int i = 0; i < rows; i++)
+            {
+                <DxGridLayoutRow></DxGridLayoutRow>
+            }
+        </Rows>
+        <Columns>
+            @for (int i = 0; i < columns; i++)
+            {
+                <DxGridLayoutColumn></DxGridLayoutColumn>
+            }
+        </Columns>
+        <Items>
+            @for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < columns; j++)
+                {
+                    <DxGridLayoutItem Row="@i" Column="@j">
+                        <Template>
+                            <div class="rounded-circle" style="background-color:red; height:1rem; width:1rem">
+                            </div>
+                        </Template>
+                    </DxGridLayoutItem>
+                }
+            }
+
+        </Items>
+    </DxGridLayout>
+</div>
+
+
+@code {
+    [Parameter]
+    public int rows { get; set; }
+    [Parameter]
+    public int columns { get; set; }
+    [Parameter]
+    public int degree { get; set; }
+}

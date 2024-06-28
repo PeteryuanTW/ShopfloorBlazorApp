@@ -1,0 +1,26 @@
+﻿@page "/StationsDataPage"
+@inject ShopfloorServiceDataService shopfloorServiceDataService
+
+<DxGrid Data="@stationConfigs">
+    <Columns>
+        <DxGridDataColumn FieldName="Name" />
+        <DxGridDataColumn FieldName="Type" />
+        <DxGridDataColumn FieldName="ProcessName" />
+        <DxGridDataColumn FieldName="ProcessStep" />
+    </Columns>
+    <ToolbarTemplate>
+        <DxToolbar ItemRenderStyleMode="ToolbarRenderStyleMode.Plain">
+            <DxToolbarItem IconCssClass="oi oi-plus" />
+            <DxToolbarItem IconCssClass="oi oi-pencil" />
+            <DxToolbarItem IconCssClass="oi oi-trash" />
+        </DxToolbar>
+    </ToolbarTemplate>
+</DxGrid>
+
+@code {
+    private List<StationConfig> stationConfigs;
+    protected override async Task OnInitializedAsync()
+    {
+        stationConfigs = shopfloorServiceDataService.GetStationConfigs();
+    }
+}
